@@ -1,0 +1,48 @@
+{
+  "expo": {
+    "name": "מתכונים",
+    "slug": "recipe-management",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "recipes",
+    "userInterfaceStyle": "light",
+    "platforms": [
+      "android"
+    ],
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0B0B0F"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "android": {
+      "package": "com.guy.recipes",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0B0F"
+      },
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "softwareKeyboardLayoutMode": "pan"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "האפליקציה צריכה גישה לגלריה כדי לצרף תמונה למתכון."
+        }
+      ],
+      "expo-asset",
+      "expo-sqlite"
+    ],
+    "extra": {
+      "forceRTL": true
+    },
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}
