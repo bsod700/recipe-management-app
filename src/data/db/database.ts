@@ -27,6 +27,9 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
     CREATE TABLE IF NOT EXISTS recipes (
       id TEXT PRIMARY KEY NOT NULL,
       title TEXT NOT NULL,
+      prep_time_minutes INTEGER NOT NULL DEFAULT 0,
+      cook_time_minutes INTEGER NOT NULL DEFAULT 0,
+      servings INTEGER NOT NULL DEFAULT 0,
       ingredients TEXT NOT NULL,
       instructions TEXT NOT NULL,
       image_uri TEXT,
@@ -37,6 +40,27 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_recipes_title ON recipes(title);
     CREATE INDEX IF NOT EXISTS idx_recipes_updated_at ON recipes(updated_at DESC);
   `);
+
+  const tableColumns = await db.getAllAsync<{ name: string }>(
+    'PRAGMA table_info(recipes);'
+  );
+  const existingColumns = new Set(tableColumns.map((column) => column.name));
+
+  if (!existingColumns.has('prep_time_minutes')) {
+    await db.runAsync(
+      'ALTER TABLE recipes ADD COLUMN prep_time_minutes INTEGER NOT NULL DEFAULT 0;'
+    );
+  }
+  if (!existingColumns.has('cook_time_minutes')) {
+    await db.runAsync(
+      'ALTER TABLE recipes ADD COLUMN cook_time_minutes INTEGER NOT NULL DEFAULT 0;'
+    );
+  }
+  if (!existingColumns.has('servings')) {
+    await db.runAsync(
+      'ALTER TABLE recipes ADD COLUMN servings INTEGER NOT NULL DEFAULT 0;'
+    );
+  }
 }
 
 /** Test hook — closes and resets the cached instance. */

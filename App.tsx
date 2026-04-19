@@ -55,6 +55,9 @@ export default function App(): React.ReactElement {
             DevSettings.reload();
             return;
           }
+          // Never block app startup if reload is unavailable on device.
+          if (mounted) setRtlReady(true);
+          return;
         }
       }
       if (mounted) setRtlReady(true);

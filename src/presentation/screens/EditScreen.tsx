@@ -50,6 +50,11 @@ const emptyIngredient = {
 
 const emptyInstructionStep = { text: '' } as const;
 
+function parseWholeNumber(text: string): number {
+  const normalized = text.replace(/[^0-9]/g, '');
+  return normalized === '' ? NaN : Number(normalized);
+}
+
 export function EditScreen(): React.ReactElement {
   const route = useRoute<Props['route']>();
   const navigation = useNavigation<Nav>();
@@ -62,6 +67,9 @@ export function EditScreen(): React.ReactElement {
   const defaultValues = useMemo<RecipeFormValues>(
     () => ({
       title: '',
+      prepTimeMinutes: NaN,
+      cookTimeMinutes: NaN,
+      servings: NaN,
       ingredients: [{ ...emptyIngredient }],
       instructions: [{ ...emptyInstructionStep }],
       imageUri: undefined,
@@ -85,6 +93,9 @@ export function EditScreen(): React.ReactElement {
     if (!recipe) return;
     reset({
       title: recipe.title,
+      prepTimeMinutes: recipe.prepTimeMinutes,
+      cookTimeMinutes: recipe.cookTimeMinutes,
+      servings: recipe.servings,
       ingredients: recipe.ingredients.map((i) => ({
         name: i.name,
         amount: i.amount,
@@ -156,6 +167,9 @@ export function EditScreen(): React.ReactElement {
       try {
         const draft = {
           title: values.title,
+          prepTimeMinutes: values.prepTimeMinutes,
+          cookTimeMinutes: values.cookTimeMinutes,
+          servings: values.servings,
           ingredients: values.ingredients,
           instructions: serializeInstructionSteps(
             values.instructions.map((step) => step.text)
@@ -223,7 +237,7 @@ export function EditScreen(): React.ReactElement {
             contentContainerStyle={{
               padding: theme.spacing.lg,
               gap: theme.spacing.xl,
-              paddingBottom: theme.spacing.xxl,
+              paddingBottom: theme.spacing.xl,
             }}
             keyboardShouldPersistTaps="handled"
           >
@@ -243,6 +257,78 @@ export function EditScreen(): React.ReactElement {
                 />
               )}
             />
+
+            {/* Recipe details */}
+            <View style={{ gap: theme.spacing.md }}>
+              <Text className="text-lg font-bold text-text text-right">
+                {strings.screens.edit.fields.recipeDetails}
+              </Text>
+              <View style={{ gap: theme.spacing.md }}>
+                <Controller
+                  control={control}
+                  name="prepTimeMinutes"
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      label={strings.screens.edit.fields.prepTimeMinutes}
+                      placeholder={strings.screens.edit.fields.minutesPlaceholder}
+                      value={
+                        field.value === undefined || Number.isNaN(field.value)
+                          ? ''
+                          : String(field.value)
+                      }
+                      onChangeText={(text) => field.onChange(parseWholeNumber(text))}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      returnKeyType="next"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="cookTimeMinutes"
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      label={strings.screens.edit.fields.cookTimeMinutes}
+                      placeholder={strings.screens.edit.fields.minutesPlaceholder}
+                      value={
+                        field.value === undefined || Number.isNaN(field.value)
+                          ? ''
+                          : String(field.value)
+                      }
+                      onChangeText={(text) => field.onChange(parseWholeNumber(text))}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      returnKeyType="next"
+                    />
+                  )}
+                />
+                <Controller
+                  control={control}
+                  name="servings"
+                  render={({ field, fieldState }) => (
+                    <TextField
+                      label={strings.screens.edit.fields.servings}
+                      placeholder={strings.screens.edit.fields.servingsPlaceholder}
+                      value={
+                        field.value === undefined || Number.isNaN(field.value)
+                          ? ''
+                          : String(field.value)
+                      }
+                      onChangeText={(text) => field.onChange(parseWholeNumber(text))}
+                      onBlur={field.onBlur}
+                      error={fieldState.error?.message}
+                      keyboardType="number-pad"
+                      inputMode="numeric"
+                      returnKeyType="next"
+                    />
+                  )}
+                />
+              </View>
+            </View>
 
             {/* Ingredients */}
             <View style={{ gap: theme.spacing.md }}>
@@ -356,8 +442,19 @@ export function EditScreen(): React.ReactElement {
                 setValue('imageUri', uri, { shouldDirty: true })
               }
             />
+          </ScrollView>
 
-            {/* Save */}
+          <View
+            style={{
+              paddingHorizontal: theme.spacing.lg,
+              paddingTop: theme.spacing.md,
+              paddingBottom: theme.spacing.lg,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border,
+              backgroundColor: theme.colors.surface,
+              gap: theme.spacing.sm,
+            }}
+          >
             <Button
               label={strings.screens.edit.actions.save}
               onPress={handleSubmit(onSubmit)}
@@ -372,7 +469,7 @@ export function EditScreen(): React.ReactElement {
                 loading={deleting}
               />
             ) : null}
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </FormProvider>

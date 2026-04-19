@@ -20,6 +20,9 @@ export interface Ingredient {
 export interface Recipe {
   readonly id: string;
   readonly title: string;
+  readonly prepTimeMinutes: number;
+  readonly cookTimeMinutes: number;
+  readonly servings: number;
   readonly ingredients: ReadonlyArray<Ingredient>;
   readonly instructions: string;
   readonly imageUri?: string;

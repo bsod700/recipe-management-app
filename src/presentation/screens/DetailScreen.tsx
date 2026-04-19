@@ -42,7 +42,15 @@ export function DetailScreen(): React.ReactElement {
           onPress={() => navigation.navigate('RecipeEdit', { id })}
           accessibilityRole="button"
           hitSlop={12}
-          style={{ paddingHorizontal: theme.spacing.md, minHeight: theme.minTouchTarget, justifyContent: 'center' }}
+          style={{
+            paddingHorizontal: theme.spacing.md,
+            minHeight: theme.minTouchTarget,
+            justifyContent: 'center',
+            borderRadius: theme.radius.md,
+            backgroundColor: theme.colors.surfaceAlt,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+          }}
         >
           <Text className="text-base text-accent font-bold">
             {strings.screens.detail.edit}
@@ -86,6 +94,65 @@ export function DetailScreen(): React.ReactElement {
             resizeMode="cover"
           />
         ) : null}
+
+        <View style={{ gap: theme.spacing.md }}>
+          <Text className="text-xl font-bold text-text text-right">
+            {strings.screens.detail.statsHeading}
+          </Text>
+          <View
+            style={{
+              backgroundColor: theme.colors.surface,
+              borderRadius: theme.radius.lg,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+              padding: theme.spacing.md,
+              gap: theme.spacing.sm,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Text className="text-base text-text text-right">
+                ⏱️ {strings.screens.detail.prepTime}
+              </Text>
+              <Text className="text-base font-semibold text-text">
+                {recipe.prepTimeMinutes} {strings.screens.detail.minutesUnit}
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Text className="text-base text-text text-right">
+                🔥 {strings.screens.detail.cookTime}
+              </Text>
+              <Text className="text-base font-semibold text-text">
+                {recipe.cookTimeMinutes} {strings.screens.detail.minutesUnit}
+              </Text>
+            </View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <Text className="text-base text-text text-right">
+                🍽️ {strings.screens.detail.servings}
+              </Text>
+              <Text className="text-base font-semibold text-text">
+                {recipe.servings} {strings.screens.detail.servingsUnit}
+              </Text>
+            </View>
+          </View>
+        </View>
 
         <View style={{ gap: theme.spacing.md }}>
           <Text className="text-xl font-bold text-text text-right">

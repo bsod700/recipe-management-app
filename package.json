@@ -7,8 +7,10 @@
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
+    "build:apk": "export NODE_ENV=production ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" && expo prebuild -p android && mkdir -p android/app/src/main/res/drawable && printf '%s\\n' '<?xml version=\"1.0\" encoding=\"utf-8\"?>' '<layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">' '  <item>' '    <shape android:shape=\"rectangle\">' '      <solid android:color=\"#0B0B0F\" />' '    </shape>' '  </item>' '</layer-list>' > android/app/src/main/res/drawable/splashscreen_logo.xml && cd android && ./gradlew --no-daemon -Dorg.gradle.jvmargs='-Xmx6g -XX:MaxMetaspaceSize=2g -Dfile.encoding=UTF-8' assembleRelease -x lint -x lintVitalAnalyzeRelease",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint . --ext .ts,.tsx",
+    "ios": "expo run:ios"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -38,9 +40,11 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@types/react": "~19.1.17",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "babel-preset-expo": "~54.0.10",
     "eslint": "^9.0.0",
     "prettier": "^3.3.0",
     "typescript": "~5.9.3"

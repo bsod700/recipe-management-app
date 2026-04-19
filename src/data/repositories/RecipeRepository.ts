@@ -6,6 +6,9 @@ import { deleteImage } from '@shared/utils/images';
 interface RecipeRow {
   id: string;
   title: string;
+  prep_time_minutes: number;
+  cook_time_minutes: number;
+  servings: number;
   ingredients: string;
   instructions: string;
   image_uri: string | null;
@@ -18,6 +21,9 @@ function rowToRecipe(row: RecipeRow): Recipe {
   const recipe: Recipe = {
     id: row.id,
     title: row.title,
+    prepTimeMinutes: row.prep_time_minutes ?? 0,
+    cookTimeMinutes: row.cook_time_minutes ?? 0,
+    servings: row.servings ?? 0,
     ingredients,
     instructions: row.instructions,
     createdAt: row.created_at,
@@ -56,6 +62,9 @@ export const RecipeRepository = {
     const recipe: Recipe = {
       id: newId(),
       title: draft.title,
+      prepTimeMinutes: draft.prepTimeMinutes,
+      cookTimeMinutes: draft.cookTimeMinutes,
+      servings: draft.servings,
       ingredients: draft.ingredients,
       instructions: draft.instructions,
       createdAt: now,
@@ -63,11 +72,16 @@ export const RecipeRepository = {
       ...(draft.imageUri ? { imageUri: draft.imageUri } : {}),
     };
     await db.runAsync(
-      `INSERT INTO recipes (id, title, ingredients, instructions, image_uri, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO recipes (
+         id, title, prep_time_minutes, cook_time_minutes, servings, ingredients, instructions, image_uri, created_at, updated_at
+       )
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         recipe.id,
         recipe.title,
+        recipe.prepTimeMinutes,
+        recipe.cookTimeMinutes,
+        recipe.servings,
         JSON.stringify(recipe.ingredients),
         recipe.instructions,
         recipe.imageUri ?? null,
@@ -92,6 +106,9 @@ export const RecipeRepository = {
     const updated: Recipe = {
       id,
       title: draft.title,
+      prepTimeMinutes: draft.prepTimeMinutes,
+      cookTimeMinutes: draft.cookTimeMinutes,
+      servings: draft.servings,
       ingredients: draft.ingredients,
       instructions: draft.instructions,
       createdAt: existing.createdAt,
@@ -100,10 +117,13 @@ export const RecipeRepository = {
     };
     await db.runAsync(
       `UPDATE recipes
-       SET title = ?, ingredients = ?, instructions = ?, image_uri = ?, updated_at = ?
+       SET title = ?, prep_time_minutes = ?, cook_time_minutes = ?, servings = ?, ingredients = ?, instructions = ?, image_uri = ?, updated_at = ?
        WHERE id = ?`,
       [
         updated.title,
+        updated.prepTimeMinutes,
+        updated.cookTimeMinutes,
+        updated.servings,
         JSON.stringify(updated.ingredients),
         updated.instructions,
         updated.imageUri ?? null,

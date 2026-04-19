@@ -17,7 +17,7 @@ function FABInner({ onPress, accessibilityLabel, icon = '+' }: Props): React.Rea
       android_ripple={{ color: theme.colors.accentPressed, borderless: true }}
       style={{
         position: 'absolute',
-        bottom: theme.spacing.xl,
+        bottom: theme.spacing.xl + 48,
         // RTL: place the FAB on the left so it doesn't collide with scroll
         // indicators or gesture areas on the natural "end" edge.
         left: theme.spacing.xl,

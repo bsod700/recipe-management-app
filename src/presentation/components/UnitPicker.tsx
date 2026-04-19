@@ -1,5 +1,6 @@
 import React, { memo, useState } from 'react';
 import { Modal, Pressable, Text, View, FlatList } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UNIT_OPTIONS } from '@shared/constants/units';
 import type { IngredientUnit } from '@domain/entities/Recipe';
 import { theme } from '@shared/theme/theme';
@@ -17,7 +18,9 @@ export const UnitPicker = memo(function UnitPicker({
   onChange,
 }: Props): React.ReactElement {
   const [open, setOpen] = useState(false);
+  const insets = useSafeAreaInsets();
   const current = UNIT_OPTIONS.find((o) => o.value === value) ?? UNIT_OPTIONS[0]!;
+  const sheetBottomPadding = insets.bottom + theme.spacing.sm;
 
   return (
     <>
@@ -41,17 +44,28 @@ export const UnitPicker = memo(function UnitPicker({
         visible={open}
         animationType="fade"
         transparent
+        statusBarTranslucent
+        navigationBarTranslucent
         onRequestClose={() => setOpen(false)}
       >
-        <Pressable
-          onPress={() => setOpen(false)}
-          className="flex-1 justify-end bg-black/60"
-        >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            onPress={() => setOpen(false)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            }}
+          />
           <View
-            className="bg-surface rounded-t-2xl"
+            className="bg-surface rounded-t-xl"
             style={{
               paddingVertical: theme.spacing.md,
               paddingHorizontal: theme.spacing.lg,
+              paddingBottom: sheetBottomPadding,
             }}
           >
             <FlatList
@@ -82,7 +96,7 @@ export const UnitPicker = memo(function UnitPicker({
               )}
             />
           </View>
-        </Pressable>
+        </View>
       </Modal>
     </>
   );

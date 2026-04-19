@@ -65,6 +65,9 @@ function RecipeCardInner({ recipe, onPress }: Props): React.ReactElement {
           {recipe.ingredients.length}{' '}
           {recipe.ingredients.length === 1 ? 'מרכיב' : 'מרכיבים'}
         </Text>
+        <Text className="text-sm text-textMuted text-left mt-1">
+          ⏱️ {recipe.prepTimeMinutes + recipe.cookTimeMinutes} דק׳ · 🍽️ {recipe.servings}
+        </Text>
       </View>
     </Pressable>
   );
