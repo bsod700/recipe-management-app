@@ -10,6 +10,7 @@ import { RootNavigator } from '@presentation/navigation/RootNavigator';
 import { theme } from '@shared/theme/theme';
 import { getDb } from '@data/db/database';
 import { ensureImageDir } from '@shared/utils/images';
+import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 
 const navTheme = {
   ...DarkTheme,
@@ -102,16 +103,20 @@ export default function App(): React.ReactElement {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, direction: 'rtl' }}>
-      <SafeAreaProvider style={{ flex: 1 }}>
-        <StatusBar
-          barStyle="light-content"
-          backgroundColor={theme.colors.bg}
-        />
-        <NavigationContainer theme={navTheme} direction="rtl">
-          <RootNavigator />
-        </NavigationContainer>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    <GluestackUIProvider mode="dark">
+      <GestureHandlerRootView
+        style={{ flex: 1, direction: 'rtl', backgroundColor: theme.colors.bg }}
+      >
+        <SafeAreaProvider style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+          <StatusBar
+            barStyle="light-content"
+            backgroundColor={theme.colors.bg}
+          />
+          <NavigationContainer theme={navTheme} direction="rtl">
+            <RootNavigator />
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </GluestackUIProvider>
   );
 }

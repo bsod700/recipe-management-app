@@ -1,6 +1,12 @@
 import React, { memo } from 'react';
-import { Pressable, Text, ActivityIndicator } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
 import { theme } from '@shared/theme/theme';
+import {
+  Button as GluestackButton,
+  ButtonIcon,
+  ButtonSpinner,
+  ButtonText,
+} from '@/components/ui/button';
 
 type Variant = 'primary' | 'secondary' | 'danger';
 
@@ -12,18 +18,25 @@ interface Props {
   readonly loading?: boolean;
   readonly accessibilityLabel?: string;
   readonly testID?: string;
+  readonly icon?: LucideIcon;
 }
 
-const variantClass: Record<Variant, string> = {
-  primary: 'bg-accent active:bg-accentPressed',
-  secondary: 'bg-surfaceAlt active:opacity-80 border border-border',
-  danger: 'bg-danger active:opacity-80',
+const variantAction: Record<Variant, 'primary' | 'secondary' | 'negative'> = {
+  primary: 'primary',
+  secondary: 'secondary',
+  danger: 'negative',
 };
 
-const variantTextColor: Record<Variant, string> = {
-  primary: 'text-bg',
-  secondary: 'text-text',
-  danger: 'text-text',
+const variantClassName: Record<Variant, string> = {
+  primary: 'bg-primary-500',
+  secondary: 'bg-secondary-500 border border-outline-500',
+  danger: 'bg-error-500',
+};
+
+const variantTextClassName: Record<Variant, string> = {
+  primary: 'text-typography-0',
+  secondary: 'text-typography-950',
+  danger: 'text-typography-0',
 };
 
 export const Button = memo(function Button({
@@ -34,26 +47,33 @@ export const Button = memo(function Button({
   loading = false,
   accessibilityLabel,
   testID,
+  icon,
 }: Props): React.ReactElement {
   const isInactive = disabled || loading;
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={isInactive}
-      accessibilityRole="button"
+    <GluestackButton
+      onPress={() => onPress()}
+      action={variantAction[variant]}
+      variant="solid"
+      size="lg"
+      isDisabled={isInactive}
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: isInactive, busy: loading }}
       testID={testID}
-      style={{ minHeight: theme.minTouchTarget }}
-      className={`rounded-card px-5 justify-center items-center ${variantClass[variant]} ${isInactive ? 'opacity-50' : ''}`}
+      style={{ minHeight: theme.minTouchTarget, borderRadius: theme.radius.lg }}
+      className={`${variantClassName[variant]} ${isInactive ? 'opacity-50' : ''}`}
     >
       {loading ? (
-        <ActivityIndicator color={theme.colors.bg} />
+        <ButtonSpinner color={theme.colors.bg} />
       ) : (
-        <Text className={`text-base font-bold ${variantTextColor[variant]}`}>
-          {label}
-        </Text>
+        <>
+          {icon ? (
+            <ButtonIcon as={icon} className={variantTextClassName[variant]} />
+          ) : null}
+          <ButtonText className={`text-base font-bold ${variantTextClassName[variant]}`}>
+            {label}
+          </ButtonText>
+        </>
       )}
-    </Pressable>
+    </GluestackButton>
   );
 });

@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
-import { View, TextInput, Pressable, Text } from 'react-native';
+import { Search, X } from 'lucide-react-native';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
+import { Input, InputField, InputIcon, InputSlot } from '@/components/ui/input';
 
 interface Props {
   readonly value: string;
@@ -10,19 +11,23 @@ interface Props {
 
 function SearchBarInner({ value, onChange }: Props): React.ReactElement {
   return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: theme.colors.surface,
-        borderRadius: theme.radius.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-        paddingHorizontal: theme.spacing.lg,
-        minHeight: theme.minTouchTarget,
-      }}
+    <Input
+      variant="outline"
+      size="lg"
+      className="bg-secondary-500 border-outline-500 rounded-lg"
+      style={{ minHeight: theme.minTouchTarget }}
     >
-      <TextInput
+      {value.length > 0 ? (
+        <InputSlot
+          onPress={() => onChange('')}
+          accessibilityRole="button"
+          accessibilityLabel={strings.a11y.clearSearch}
+          style={{ minWidth: theme.minTouchTarget, minHeight: theme.minTouchTarget }}
+        >
+          <InputIcon as={X} className="text-typography-500" />
+        </InputSlot>
+      ) : null}
+      <InputField
         value={value}
         onChangeText={onChange}
         placeholder={strings.screens.list.searchPlaceholder}
@@ -30,32 +35,15 @@ function SearchBarInner({ value, onChange }: Props): React.ReactElement {
         selectionColor={theme.colors.accent}
         accessibilityLabel={strings.a11y.searchField}
         textAlign="right"
-        style={{
-          flex: 1,
-          color: theme.colors.text,
-          fontSize: theme.fontBase,
-          writingDirection: 'rtl',
-        }}
+        className="text-right text-typography-950"
+        style={{ writingDirection: 'rtl', fontSize: theme.fontBase }}
         returnKeyType="search"
         autoCorrect={false}
       />
-      {value.length > 0 ? (
-        <Pressable
-          onPress={() => onChange('')}
-          accessibilityRole="button"
-          accessibilityLabel={strings.a11y.clearSearch}
-          hitSlop={12}
-          style={{
-            minWidth: theme.minTouchTarget,
-            minHeight: theme.minTouchTarget,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text className="text-xl text-textMuted">×</Text>
-        </Pressable>
-      ) : null}
-    </View>
+      <InputSlot style={{ minWidth: theme.minTouchTarget, minHeight: theme.minTouchTarget }}>
+        <InputIcon as={Search} className="text-typography-500" />
+      </InputSlot>
+    </Input>
   );
 }
 

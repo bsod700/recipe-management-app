@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { Plus, Save, Trash2, X } from 'lucide-react-native';
 import {
   View,
   ScrollView,
-  Text,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -34,6 +33,10 @@ import { TextField } from '@presentation/components/TextField';
 import { Button } from '@presentation/components/Button';
 import { IngredientRow } from '@presentation/components/IngredientRow';
 import { PhotoPicker } from '@presentation/components/PhotoPicker';
+import { Icon } from '@/components/ui/icon';
+import { Pressable } from '@/components/ui/pressable';
+import { Text } from '@/components/ui/text';
+import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { DEFAULT_UNIT } from '@shared/constants/units';
@@ -62,7 +65,9 @@ export function EditScreen(): React.ReactElement {
   const isEdit = Boolean(id);
 
   const { recipe, loading } = useRecipe(id);
-  const { create, update, remove, saving, deleting } = useRecipeMutations();
+  const { create, update, remove, saving } = useRecipeMutations();
+  const bypassDiscardGuardRef = useRef(false);
+  const toast = useToast();
 
   const defaultValues = useMemo<RecipeFormValues>(
     () => ({
@@ -117,6 +122,7 @@ export function EditScreen(): React.ReactElement {
 
   // Confirm-before-leave if the form is dirty.
   const confirmDiscardIfDirty = useCallback((): boolean => {
+    if (bypassDiscardGuardRef.current) return false;
     if (!formState.isDirty) return false;
     Alert.alert(
       strings.screens.edit.confirmDiscard.title,
@@ -144,6 +150,7 @@ export function EditScreen(): React.ReactElement {
   // Header back intercept.
   useEffect(() => {
     const unsub = navigation.addListener('beforeRemove', (e) => {
+      if (bypassDiscardGuardRef.current) return;
       if (!formState.isDirty) return;
       e.preventDefault();
       Alert.alert(
@@ -182,13 +189,23 @@ export function EditScreen(): React.ReactElement {
           await create(draft);
         }
         // Reset dirty so beforeRemove lets us leave quietly.
+        bypassDiscardGuardRef.current = true;
         reset(values);
-        navigation.goBack();
+        toast.show({
+          placement: 'top',
+          duration: 1800,
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`save-success-${toastId}`} action="success" variant="solid">
+              <ToastTitle>{strings.screens.edit.feedback.saveSuccess}</ToastTitle>
+            </Toast>
+          ),
+        });
+        navigation.popToTop();
       } catch {
         Alert.alert(strings.app.name, strings.errors.saveFailed);
       }
     },
-    [create, update, id, isEdit, navigation, reset]
+    [create, update, id, isEdit, navigation, reset, toast]
   );
 
   const onDelete = useCallback(() => {
@@ -216,6 +233,30 @@ export function EditScreen(): React.ReactElement {
     );
   }, [id, navigation, remove, reset, methods]);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: isEdit
+        ? () => (
+            <Pressable
+              onPress={onDelete}
+              accessibilityRole="button"
+              accessibilityLabel={strings.screens.edit.actions.delete}
+              className="bg-secondary-500 border border-outline-500 rounded-md"
+              style={{
+                minHeight: theme.minTouchTarget,
+                minWidth: theme.minTouchTarget,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingHorizontal: theme.spacing.sm,
+              }}
+            >
+              <Icon as={Trash2} size="md" className="text-error-500" />
+            </Pressable>
+          )
+        : undefined,
+    });
+  }, [navigation, isEdit, onDelete]);
+
   const imageUri = watch('imageUri');
 
   if (isEdit && loading) {
@@ -231,9 +272,10 @@ export function EditScreen(): React.ReactElement {
       <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.colors.bg }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'android' ? undefined : 'padding'}
-          style={{ flex: 1 }}
+          style={{ flex: 1, backgroundColor: theme.colors.bg }}
         >
           <ScrollView
+            style={{ backgroundColor: theme.colors.bg }}
             contentContainerStyle={{
               padding: theme.spacing.lg,
               gap: theme.spacing.xl,
@@ -260,7 +302,7 @@ export function EditScreen(): React.ReactElement {
 
             {/* Recipe details */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-text text-right">
+              <Text className="text-lg font-bold text-typography-950 text-right">
                 {strings.screens.edit.fields.recipeDetails}
               </Text>
               <View style={{ gap: theme.spacing.md }}>
@@ -332,12 +374,12 @@ export function EditScreen(): React.ReactElement {
 
             {/* Ingredients */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-text text-right">
+              <Text className="text-lg font-bold text-typography-950 text-right">
                 {strings.screens.edit.fields.ingredients}
               </Text>
 
               {formState.errors.ingredients?.message ? (
-                <Text className="text-base text-danger text-right">
+                <Text className="text-base text-error-500 text-right">
                   {formState.errors.ingredients.message}
                 </Text>
               ) : null}
@@ -357,17 +399,18 @@ export function EditScreen(): React.ReactElement {
                 label={strings.screens.edit.actions.addIngredient}
                 variant="secondary"
                 onPress={() => ingredientFields.append({ ...emptyIngredient })}
+                icon={Plus}
               />
             </View>
 
             {/* Instructions */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-text text-right">
+              <Text className="text-lg font-bold text-typography-950 text-right">
                 {strings.screens.edit.fields.instructions}
               </Text>
 
               {typeof formState.errors.instructions?.message === 'string' ? (
-                <Text className="text-base text-danger text-right">
+                <Text className="text-base text-error-500 text-right">
                   {formState.errors.instructions.message}
                 </Text>
               ) : null}
@@ -376,7 +419,7 @@ export function EditScreen(): React.ReactElement {
                 {instructionFields.fields.map((field, index) => (
                   <View
                     key={field.id}
-                    className="rounded-card border border-border bg-surfaceAlt"
+                    className="rounded-lg border border-outline-500 bg-secondary-500"
                     style={{ padding: theme.spacing.md, gap: theme.spacing.sm }}
                   >
                     <View
@@ -386,7 +429,7 @@ export function EditScreen(): React.ReactElement {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <Text className="text-base text-accent font-bold">
+                      <Text className="text-base text-primary-500 font-bold">
                         {formatStepNumber(index)}
                       </Text>
                       {instructionFields.fields.length > 1 ? (
@@ -402,9 +445,7 @@ export function EditScreen(): React.ReactElement {
                             borderRadius: theme.radius.md,
                           }}
                         >
-                          <Text className="text-danger font-semibold">
-                            {strings.screens.edit.actions.removeStep}
-                          </Text>
+                          <Icon as={X} size="md" className="text-error-500" />
                         </Pressable>
                       ) : null}
                     </View>
@@ -432,6 +473,7 @@ export function EditScreen(): React.ReactElement {
                 label={strings.screens.edit.actions.addStep}
                 variant="secondary"
                 onPress={() => instructionFields.append({ ...emptyInstructionStep })}
+                icon={Plus}
               />
             </View>
 
@@ -459,16 +501,8 @@ export function EditScreen(): React.ReactElement {
               label={strings.screens.edit.actions.save}
               onPress={handleSubmit(onSubmit)}
               loading={saving}
+              icon={Save}
             />
-
-            {isEdit ? (
-              <Button
-                label={strings.screens.edit.actions.delete}
-                onPress={onDelete}
-                variant="danger"
-                loading={deleting}
-              />
-            ) : null}
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>

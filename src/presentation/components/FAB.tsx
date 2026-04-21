@@ -1,20 +1,27 @@
 import React, { memo } from 'react';
-import { Pressable, Text } from 'react-native';
+import type { LucideIcon } from 'lucide-react-native';
+import { Plus } from 'lucide-react-native';
 import { theme } from '@shared/theme/theme';
+import { Pressable } from '@/components/ui/pressable';
+import { Icon } from '@/components/ui/icon';
 
 interface Props {
   readonly onPress: () => void;
   readonly accessibilityLabel: string;
-  readonly icon?: string;
+  readonly icon?: LucideIcon;
 }
 
-function FABInner({ onPress, accessibilityLabel, icon = '+' }: Props): React.ReactElement {
+function FABInner({
+  onPress,
+  accessibilityLabel,
+  icon = Plus,
+}: Props): React.ReactElement {
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      android_ripple={{ color: theme.colors.accentPressed, borderless: true }}
+      className="bg-primary-500 items-center justify-center"
       style={{
         position: 'absolute',
         bottom: theme.spacing.xl + 48,
@@ -24,9 +31,6 @@ function FABInner({ onPress, accessibilityLabel, icon = '+' }: Props): React.Rea
         width: 64,
         height: 64,
         borderRadius: 32,
-        backgroundColor: theme.colors.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
         elevation: 8,
         shadowColor: '#000',
         shadowOpacity: 0.3,
@@ -34,9 +38,7 @@ function FABInner({ onPress, accessibilityLabel, icon = '+' }: Props): React.Rea
         shadowOffset: { width: 0, height: 4 },
       }}
     >
-      <Text style={{ fontSize: 32, color: theme.colors.bg, fontWeight: '700' }}>
-        {icon}
-      </Text>
+      <Icon as={icon} size="xl" className="text-typography-0" />
     </Pressable>
   );
 }

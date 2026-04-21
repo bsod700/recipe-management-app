@@ -20,6 +20,8 @@ export function RootNavigator(): React.ReactElement {
         headerTitleStyle: { fontSize: 18, fontWeight: '700' },
         headerBackTitle: strings.screens.edit.actions.cancel,
         contentStyle: { backgroundColor: theme.colors.bg },
+        statusBarColor: theme.colors.bg,
+        navigationBarColor: theme.colors.bg,
         animation: I18nManager.isRTL ? 'slide_from_left' : 'slide_from_right',
       }}
     >

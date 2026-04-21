@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
+import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,6 +11,9 @@ import { useRecipeMutations } from '@application/hooks/useRecipeMutations';
 import { SearchBar } from '@presentation/components/SearchBar';
 import { RecipeCard } from '@presentation/components/RecipeCard';
 import { FAB } from '@presentation/components/FAB';
+import { Pressable } from '@/components/ui/pressable';
+import { Icon } from '@/components/ui/icon';
+import { Text } from '@/components/ui/text';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import type { Recipe } from '@domain/entities/Recipe';
@@ -78,11 +82,11 @@ export function ListScreen(): React.ReactElement {
           accessibilityRole="button"
           accessibilityLabel={strings.a11y.swipeDeleteRecipe}
           disabled={deleting}
+          className="bg-error-500"
           style={{
             minHeight: theme.minTouchTarget,
             minWidth: theme.minTouchTarget,
             borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.danger,
             alignItems: 'center',
             justifyContent: 'center',
             paddingHorizontal: theme.spacing.md,
@@ -90,8 +94,8 @@ export function ListScreen(): React.ReactElement {
             opacity: deleting ? 0.6 : 1,
           }}
         >
-          <Text style={{ fontSize: 18 }}>🗑️</Text>
-          <Text className="text-sm font-bold text-text">
+          <Icon as={Trash2} size="md" className="text-typography-0" />
+          <Text className="text-sm font-bold text-typography-0">
             {strings.screens.list.swipeDelete}
           </Text>
         </Pressable>
@@ -126,13 +130,13 @@ export function ListScreen(): React.ReactElement {
           </View>
         ) : error ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text className="text-lg text-danger text-center">
+            <Text className="text-lg text-error-500 text-center">
               {strings.errors.loadFailed}
             </Text>
           </View>
         ) : recipes.length === 0 ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <Text className="text-lg text-textMuted text-center">
+            <Text className="text-lg text-typography-500 text-center">
               {search.length > 0
                 ? strings.screens.list.emptySearch
                 : strings.screens.list.empty}

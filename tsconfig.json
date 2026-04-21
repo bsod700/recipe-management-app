@@ -26,6 +26,12 @@
       ],
       "@shared/*": [
         "src/shared/*"
+      ],
+      "@/*": [
+        "src/*"
+      ],
+      "tailwind.config": [
+        "./tailwind.config.js"
       ]
     },
     "jsx": "react-jsx",

@@ -1,8 +1,13 @@
 import React, { memo } from 'react';
-import { Pressable, View, Text, Image } from 'react-native';
+import { Image } from 'react-native';
+import { ChefHat, Clock3, UtensilsCrossed } from 'lucide-react-native';
 import type { Recipe } from '@domain/entities/Recipe';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
+import { Pressable } from '@/components/ui/pressable';
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
+import { Icon } from '@/components/ui/icon';
 
 interface Props {
   readonly recipe: Recipe;
@@ -15,15 +20,12 @@ function RecipeCardInner({ recipe, onPress }: Props): React.ReactElement {
       onPress={() => onPress(recipe.id)}
       accessibilityRole="button"
       accessibilityLabel={`${strings.a11y.recipeCard}: ${recipe.title}`}
-      android_ripple={{ color: theme.colors.surfaceAlt }}
+      className="bg-secondary-500 border border-outline-500"
       style={{
         minHeight: theme.minTouchTarget + 24,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: theme.colors.surface,
         borderRadius: theme.radius.lg,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
         padding: theme.spacing.md,
         gap: theme.spacing.md,
       }}
@@ -36,39 +38,46 @@ function RecipeCardInner({ recipe, onPress }: Props): React.ReactElement {
             width: 64,
             height: 64,
             borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.surfaceAlt,
+            backgroundColor: theme.colors.bg,
           }}
         />
       ) : (
-        <View
+        <Box
+          className="bg-background-0"
           style={{
             width: 64,
             height: 64,
             borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.surfaceAlt,
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 28 }}>🍲</Text>
-        </View>
+          <Icon as={ChefHat} size="xl" className="text-primary-500" />
+        </Box>
       )}
 
-      <View style={{ flex: 1 }}>
+      <Box style={{ flex: 1 }}>
         <Text
           numberOfLines={2}
-          className="text-lg font-bold text-text text-left"
+          className="text-lg font-bold text-typography-950 text-left"
         >
           {recipe.title}
         </Text>
-        <Text className="text-base text-textMuted text-left mt-1">
+        <Text className="text-base text-typography-500 text-left mt-1">
           {recipe.ingredients.length}{' '}
           {recipe.ingredients.length === 1 ? 'מרכיב' : 'מרכיבים'}
         </Text>
-        <Text className="text-sm text-textMuted text-left mt-1">
-          ⏱️ {recipe.prepTimeMinutes + recipe.cookTimeMinutes} דק׳ · 🍽️ {recipe.servings}
-        </Text>
-      </View>
+        <Box
+          style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, marginTop: theme.spacing.xs }}
+        >
+          <Icon as={Clock3} size="xs" className="text-typography-500" />
+          <Text className="text-sm text-typography-500">
+            {recipe.prepTimeMinutes + recipe.cookTimeMinutes} דק׳
+          </Text>
+          <Icon as={UtensilsCrossed} size="xs" className="text-typography-500" />
+          <Text className="text-sm text-typography-500">{recipe.servings}</Text>
+        </Box>
+      </Box>
     </Pressable>
   );
 }

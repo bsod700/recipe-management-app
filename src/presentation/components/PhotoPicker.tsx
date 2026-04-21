@@ -1,10 +1,13 @@
 import React, { memo, useCallback } from 'react';
-import { View, Image, Text, Alert } from 'react-native';
+import { Image, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { ImagePlus, Trash2 } from 'lucide-react-native';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { persistImage } from '@shared/utils/images';
 import { Button } from './Button';
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
 
 interface Props {
   readonly uri: string | undefined;
@@ -33,15 +36,14 @@ function PhotoPickerInner({ uri, onChange }: Props): React.ReactElement {
   const remove = useCallback(() => onChange(undefined), [onChange]);
 
   return (
-    <View style={{ gap: theme.spacing.md }}>
-      <Text className="text-base text-text font-semibold text-right">
+    <Box style={{ gap: theme.spacing.md }}>
+      <Text className="text-base text-typography-950 font-semibold text-right">
         {strings.screens.edit.fields.photo}
       </Text>
 
       {uri ? (
-        <View
-          className="rounded-card overflow-hidden bg-surface"
-          style={{ borderColor: theme.colors.border, borderWidth: 1 }}
+        <Box
+          className="rounded-lg overflow-hidden bg-secondary-500 border border-outline-500"
         >
           <Image
             source={{ uri }}
@@ -49,28 +51,30 @@ function PhotoPickerInner({ uri, onChange }: Props): React.ReactElement {
             style={{ width: '100%', height: 200 }}
             resizeMode="cover"
           />
-        </View>
+        </Box>
       ) : null}
 
-      <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
-        <View style={{ flex: 1 }}>
+      <Box style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+        <Box style={{ flex: 1 }}>
           <Button
             label={strings.screens.edit.actions.pickPhoto}
             onPress={pick}
             variant="secondary"
+            icon={ImagePlus}
           />
-        </View>
+        </Box>
         {uri ? (
-          <View style={{ flex: 1 }}>
+          <Box style={{ flex: 1 }}>
             <Button
               label={strings.screens.edit.actions.removePhoto}
               onPress={remove}
               variant="danger"
+              icon={Trash2}
             />
-          </View>
+          </Box>
         ) : null}
-      </View>
-    </View>
+      </Box>
+    </Box>
   );
 }
 

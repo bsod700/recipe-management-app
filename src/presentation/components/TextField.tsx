@@ -1,7 +1,11 @@
 import { forwardRef } from 'react';
-import { TextInput, View, Text } from 'react-native';
+import { TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { theme } from '@shared/theme/theme';
+import { Box } from '@/components/ui/box';
+import { Text } from '@/components/ui/text';
+import { Input, InputField } from '@/components/ui/input';
+import { Textarea, TextareaInput } from '@/components/ui/textarea';
 
 interface Props extends Omit<TextInputProps, 'style'> {
   readonly label?: string;
@@ -14,37 +18,54 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
   { label, error, multiline = false, minHeight, ...rest },
   ref
 ) {
+  void ref;
+  const hasError = Boolean(error);
   return (
-    <View className="w-full">
+    <Box className="w-full">
       {label ? (
-        <Text className="text-base text-text mb-2 font-semibold text-right">
+        <Text className="mb-2 text-base font-semibold text-typography-950 text-right">
           {label}
         </Text>
       ) : null}
-      <TextInput
-        ref={ref}
-        placeholderTextColor={theme.colors.textMuted}
-        selectionColor={theme.colors.accent}
-        multiline={multiline}
-        textAlign="right"
-        textAlignVertical={multiline ? 'top' : 'center'}
-        style={{
-          minHeight: minHeight ?? (multiline ? 120 : theme.minTouchTarget),
-          color: theme.colors.text,
-          fontSize: theme.fontBase,
-          paddingHorizontal: theme.spacing.lg,
-          paddingVertical: theme.spacing.md,
-          backgroundColor: theme.colors.surface,
-          borderRadius: theme.radius.lg,
-          borderWidth: 1,
-          borderColor: error ? theme.colors.danger : theme.colors.border,
-          writingDirection: 'rtl',
-        }}
-        {...rest}
-      />
+      {multiline ? (
+        <Textarea
+          size="md"
+          isInvalid={hasError}
+          className="bg-secondary-500 border-outline-500 rounded-lg"
+          style={{ minHeight: minHeight ?? 120 }}
+        >
+          <TextareaInput
+            placeholderTextColor={theme.colors.textMuted}
+            selectionColor={theme.colors.accent}
+            textAlign="right"
+            textAlignVertical="top"
+            className="text-right text-typography-950"
+            style={{ writingDirection: 'rtl' }}
+            {...rest}
+          />
+        </Textarea>
+      ) : (
+        <Input
+          size="lg"
+          variant="outline"
+          isInvalid={hasError}
+          className="bg-secondary-500 border-outline-500 rounded-lg"
+          style={{ minHeight: minHeight ?? theme.minTouchTarget }}
+        >
+          <InputField
+            placeholderTextColor={theme.colors.textMuted}
+            selectionColor={theme.colors.accent}
+            textAlign="right"
+            textAlignVertical="center"
+            className="text-right text-typography-950"
+            style={{ writingDirection: 'rtl', fontSize: theme.fontBase }}
+            {...rest}
+          />
+        </Input>
+      )}
       {error ? (
-        <Text className="text-base text-danger mt-1 text-right">{error}</Text>
+        <Text className="mt-1 text-base text-error-500 text-right">{error}</Text>
       ) : null}
-    </View>
+    </Box>
   );
 });

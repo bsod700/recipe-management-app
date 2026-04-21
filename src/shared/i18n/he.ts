@@ -27,6 +27,9 @@ export const strings = {
     edit: {
       titleNew: 'מתכון חדש',
       titleEdit: 'עריכת מתכון',
+      feedback: {
+        saveSuccess: 'המתכון נשמר בהצלחה',
+      },
       fields: {
         title: 'שם המתכון',
         titlePlaceholder: 'לדוגמה: שקשוקה',
@@ -51,9 +54,9 @@ export const strings = {
         removeStep: 'הסר שלב',
         pickPhoto: 'בחר תמונה',
         removePhoto: 'הסר תמונה',
-        save: '💾 שמור מתכון',
+        save: 'שמור מתכון',
         cancel: 'ביטול',
-        delete: '🗑️ מחק מתכון',
+        delete: 'מחק מתכון',
       },
       confirmDelete: {
         title: 'מחיקת מתכון',
@@ -77,7 +80,7 @@ export const strings = {
       servingsUnit: 'מנות',
       ingredientsHeading: 'מרכיבים',
       instructionsHeading: 'הוראות הכנה',
-      edit: '✏️ עריכה',
+      edit: 'עריכה',
     },
   },
   units: {

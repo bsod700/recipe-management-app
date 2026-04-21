@@ -1,9 +1,14 @@
 import React, { memo, useState } from 'react';
-import { Modal, Pressable, Text, View, FlatList } from 'react-native';
+import { Check, ChevronDown } from 'lucide-react-native';
+import { Modal, FlatList } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UNIT_OPTIONS } from '@shared/constants/units';
 import type { IngredientUnit } from '@domain/entities/Recipe';
 import { theme } from '@shared/theme/theme';
+import { Pressable } from '@/components/ui/pressable';
+import { Text } from '@/components/ui/text';
+import { Box } from '@/components/ui/box';
+import { Icon } from '@/components/ui/icon';
 
 interface Props {
   readonly value: IngredientUnit;
@@ -27,17 +32,17 @@ export const UnitPicker = memo(function UnitPicker({
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
+        className="bg-secondary-500 border border-outline-500 rounded-lg"
         style={{
           minHeight: theme.minTouchTarget,
-          backgroundColor: theme.colors.surface,
-          borderColor: theme.colors.border,
-          borderWidth: 1,
-          borderRadius: theme.radius.lg,
           paddingHorizontal: theme.spacing.lg,
-          justifyContent: 'center',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexDirection: 'row',
         }}
       >
-        <Text className="text-base text-text text-right">{current.label}</Text>
+        <Icon as={ChevronDown} size="md" className="text-typography-500" />
+        <Text className="text-base text-typography-950 text-right">{current.label}</Text>
       </Pressable>
 
       <Modal
@@ -48,7 +53,7 @@ export const UnitPicker = memo(function UnitPicker({
         navigationBarTranslucent
         onRequestClose={() => setOpen(false)}
       >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <Box style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             onPress={() => setOpen(false)}
             style={{
@@ -60,8 +65,8 @@ export const UnitPicker = memo(function UnitPicker({
               backgroundColor: 'rgba(0, 0, 0, 0.6)',
             }}
           />
-          <View
-            className="bg-surface rounded-t-xl"
+          <Box
+            className="bg-secondary-500 rounded-t-xl"
             style={{
               paddingVertical: theme.spacing.md,
               paddingHorizontal: theme.spacing.lg,
@@ -80,14 +85,21 @@ export const UnitPicker = memo(function UnitPicker({
                   }}
                   style={{
                     minHeight: theme.minTouchTarget,
-                    justifyContent: 'center',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexDirection: 'row',
                     borderBottomWidth: 1,
                     borderBottomColor: theme.colors.border,
                   }}
                 >
+                  {item.value === value ? (
+                    <Icon as={Check} size="sm" className="text-primary-500" />
+                  ) : (
+                    <Box />
+                  )}
                   <Text
                     className={`text-lg text-right ${
-                      item.value === value ? 'text-accent font-bold' : 'text-text'
+                      item.value === value ? 'text-primary-500 font-bold' : 'text-typography-950'
                     }`}
                   >
                     {item.label}
@@ -95,8 +107,8 @@ export const UnitPicker = memo(function UnitPicker({
                 </Pressable>
               )}
             />
-          </View>
-        </View>
+          </Box>
+        </Box>
       </Modal>
     </>
   );

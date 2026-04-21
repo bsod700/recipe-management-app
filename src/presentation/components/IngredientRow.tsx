@@ -1,11 +1,14 @@
 import React, { memo, useCallback } from 'react';
-import { View, Pressable, Text } from 'react-native';
+import { X } from 'lucide-react-native';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { RecipeFormValues } from '@domain/schemas/recipeSchema';
 import { TextField } from './TextField';
 import { UnitPicker } from './UnitPicker';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
+import { Box } from '@/components/ui/box';
+import { Pressable } from '@/components/ui/pressable';
+import { Icon } from '@/components/ui/icon';
 
 interface Props {
   readonly index: number;
@@ -23,19 +26,19 @@ function IngredientRowInner({
   const handleRemove = useCallback(() => onRemove(index), [onRemove, index]);
 
   return (
-    <View
-      className="rounded-card border border-border bg-surfaceAlt"
+    <Box
+      className="rounded-lg border border-outline-500 bg-secondary-500"
       style={{ padding: theme.spacing.md, gap: theme.spacing.sm }}
     >
       {/* Row: name field + remove button (RTL row reverse) */}
-      <View
+      <Box
         style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: theme.spacing.sm,
         }}
       >
-        <View style={{ flex: 1 }}>
+        <Box style={{ flex: 1 }}>
           <Controller
             control={control}
             name={`ingredients.${index}.name`}
@@ -51,34 +54,34 @@ function IngredientRowInner({
               />
             )}
           />
-        </View>
+        </Box>
 
         {canRemove ? (
           <Pressable
             onPress={handleRemove}
             accessibilityRole="button"
             accessibilityLabel={strings.a11y.removeIngredientRow}
+            className="rounded-md bg-background-0"
             style={{
               minWidth: theme.minTouchTarget,
               minHeight: theme.minTouchTarget,
               alignItems: 'center',
               justifyContent: 'center',
-              borderRadius: theme.radius.md,
             }}
           >
-            <Text className="text-2xl text-danger font-bold">×</Text>
+            <Icon as={X} size="lg" className="text-error-500" />
           </Pressable>
         ) : null}
-      </View>
+      </Box>
 
       {/* Amount + unit (RTL) */}
-      <View
+      <Box
         style={{
           flexDirection: 'row',
           gap: theme.spacing.sm,
         }}
       >
-        <View style={{ flex: 1 }}>
+        <Box style={{ flex: 1 }}>
           <Controller
             control={control}
             name={`ingredients.${index}.amount`}
@@ -102,9 +105,9 @@ function IngredientRowInner({
               />
             )}
           />
-        </View>
+        </Box>
 
-        <View style={{ flex: 1 }}>
+        <Box style={{ flex: 1 }}>
           <Controller
             control={control}
             name={`ingredients.${index}.unit`}
@@ -112,9 +115,9 @@ function IngredientRowInner({
               <UnitPicker value={field.value} onChange={field.onChange} />
             )}
           />
-        </View>
-      </View>
-    </View>
+        </Box>
+      </Box>
+    </Box>
   );
 }
 
