@@ -2,8 +2,13 @@ import { forwardRef } from 'react';
 import { TextInput } from 'react-native';
 import type { TextInputProps } from 'react-native';
 import { theme } from '@shared/theme/theme';
-import { Box } from '@/components/ui/box';
-import { Text } from '@/components/ui/text';
+import {
+  FormControl,
+  FormControlError,
+  FormControlErrorText,
+  FormControlLabel,
+  FormControlLabelText,
+} from '@/components/ui/form-control';
 import { Input, InputField } from '@/components/ui/input';
 import { Textarea, TextareaInput } from '@/components/ui/textarea';
 
@@ -21,11 +26,13 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
   void ref;
   const hasError = Boolean(error);
   return (
-    <Box className="w-full">
+    <FormControl className="w-full" isInvalid={hasError}>
       {label ? (
-        <Text className="mb-2 text-base font-semibold text-typography-950 text-right">
-          {label}
-        </Text>
+        <FormControlLabel className="justify-end mb-2" style={{ direction: 'ltr'}}>
+          <FormControlLabelText className="text-base font-semibold text-typography-950">
+            {label}
+          </FormControlLabelText>
+        </FormControlLabel>
       ) : null}
       {multiline ? (
         <Textarea
@@ -37,10 +44,8 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
           <TextareaInput
             placeholderTextColor={theme.colors.textMuted}
             selectionColor={theme.colors.accent}
-            textAlign="right"
             textAlignVertical="top"
-            className="text-right text-typography-950"
-            style={{ writingDirection: 'rtl' }}
+            className="text-typography-950"
             {...rest}
           />
         </Textarea>
@@ -55,17 +60,20 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
           <InputField
             placeholderTextColor={theme.colors.textMuted}
             selectionColor={theme.colors.accent}
-            textAlign="right"
             textAlignVertical="center"
-            className="text-right text-typography-950"
-            style={{ writingDirection: 'rtl', fontSize: theme.fontBase }}
+            className="text-typography-950"
+            style={{ fontSize: theme.fontBase }}
             {...rest}
           />
         </Input>
       )}
       {error ? (
-        <Text className="mt-1 text-base text-error-500 text-right">{error}</Text>
+        <FormControlError className="justify-end mt-1">
+          <FormControlErrorText className="text-base">
+            {error}
+          </FormControlErrorText>
+        </FormControlError>
       ) : null}
-    </Box>
+    </FormControl>
   );
 });

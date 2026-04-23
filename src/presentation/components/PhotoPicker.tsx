@@ -37,7 +37,7 @@ function PhotoPickerInner({ uri, onChange }: Props): React.ReactElement {
 
   return (
     <Box style={{ gap: theme.spacing.md }}>
-      <Text className="text-base text-typography-950 font-semibold text-right">
+      <Text className="text-base text-typography-950 font-semibold">
         {strings.screens.edit.fields.photo}
       </Text>
 

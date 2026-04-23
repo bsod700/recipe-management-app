@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Save, Trash2, X } from 'lucide-react-native';
 import {
   View,
@@ -10,12 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  Controller,
-  FormProvider,
-  useFieldArray,
-  useForm,
-} from 'react-hook-form';
+import * as ReactHookForm from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type {
@@ -37,6 +32,15 @@ import { Icon } from '@/components/ui/icon';
 import { Pressable } from '@/components/ui/pressable';
 import { Text } from '@/components/ui/text';
 import { Toast, ToastTitle, useToast } from '@/components/ui/toast';
+import {
+  AlertDialog,
+  AlertDialogBackdrop,
+  AlertDialogBody,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+} from '@/components/ui/alert-dialog';
+import { Heading } from '@/components/ui/heading';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { DEFAULT_UNIT } from '@shared/constants/units';
@@ -44,6 +48,63 @@ import { formatStepNumber, parseInstructionSteps, serializeInstructionSteps } fr
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeEdit'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RecipeEdit'>;
+type RHFControllerRenderArg = {
+  field: {
+    value: unknown;
+    onChange: (value: unknown) => void;
+    onBlur: () => void;
+  };
+  fieldState: { error?: { message?: string } };
+};
+type RHFControllerComponent = (props: {
+  control: unknown;
+  name: string;
+  render: (props: RHFControllerRenderArg) => React.ReactElement;
+}) => React.ReactElement;
+type RHFFormProviderComponent = (
+  props: {
+    children: React.ReactNode;
+  } & Record<string, unknown>
+) => React.ReactElement;
+type RHFUseFieldArrayReturn = {
+  fields: Array<{ id: string }>;
+  append: (value: unknown) => void;
+  remove: (index: number) => void;
+};
+type RHFUseFieldArrayHook = (props: {
+  control: unknown;
+  name: string;
+}) => RHFUseFieldArrayReturn;
+type RHFUseFormReturn = {
+  control: unknown;
+  handleSubmit: (
+    onValid: (values: RecipeFormValues) => Promise<void> | void
+  ) => () => void;
+  reset: (values?: RecipeFormValues) => void;
+  watch: (name: 'imageUri') => string | undefined;
+  setValue: (
+    name: 'imageUri',
+    value: string | undefined,
+    options?: { shouldDirty?: boolean }
+  ) => void;
+  getValues: () => RecipeFormValues;
+  formState: {
+    isDirty: boolean;
+    errors: Record<string, unknown>;
+  };
+};
+type RHFUseFormHook = (props: {
+  resolver: unknown;
+  defaultValues: RecipeFormValues;
+  mode: 'onBlur';
+}) => RHFUseFormReturn;
+
+const { Controller, FormProvider, useFieldArray, useForm } = ReactHookForm as {
+  Controller: RHFControllerComponent;
+  FormProvider: RHFFormProviderComponent;
+  useFieldArray: RHFUseFieldArrayHook;
+  useForm: RHFUseFormHook;
+};
 
 const emptyIngredient = {
   name: '',
@@ -58,6 +119,10 @@ function parseWholeNumber(text: string): number {
   return normalized === '' ? NaN : Number(normalized);
 }
 
+function asString(value: unknown): string {
+  return typeof value === 'string' ? value : '';
+}
+
 export function EditScreen(): React.ReactElement {
   const route = useRoute<Props['route']>();
   const navigation = useNavigation<Nav>();
@@ -67,6 +132,8 @@ export function EditScreen(): React.ReactElement {
   const { recipe, loading } = useRecipe(id);
   const { create, update, remove, saving } = useRecipeMutations();
   const bypassDiscardGuardRef = useRef(false);
+  const pendingDiscardActionRef = useRef<null | (() => void)>(null);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
   const toast = useToast();
 
   const defaultValues = useMemo<RecipeFormValues>(
@@ -82,7 +149,7 @@ export function EditScreen(): React.ReactElement {
     []
   );
 
-  const methods = useForm<RecipeFormValues>({
+  const methods = useForm({
     resolver: zodResolver(recipeFormSchema),
     defaultValues,
     mode: 'onBlur',
@@ -120,32 +187,41 @@ export function EditScreen(): React.ReactElement {
     });
   }, [navigation, isEdit]);
 
-  // Confirm-before-leave if the form is dirty.
-  const confirmDiscardIfDirty = useCallback((): boolean => {
+  const discardDialogCopy = isEdit
+    ? strings.screens.edit.confirmDiscard
+    : strings.screens.edit.confirmDiscardNew;
+
+  // Show the discard modal and stash the action that should run on confirm.
+  const openDiscardDialog = useCallback((onConfirmDiscard: () => void): boolean => {
     if (bypassDiscardGuardRef.current) return false;
     if (!formState.isDirty) return false;
-    Alert.alert(
-      strings.screens.edit.confirmDiscard.title,
-      strings.screens.edit.confirmDiscard.message,
-      [
-        { text: strings.screens.edit.confirmDiscard.cancel, style: 'cancel' },
-        {
-          text: strings.screens.edit.confirmDiscard.confirm,
-          style: 'destructive',
-          onPress: () => navigation.goBack(),
-        },
-      ]
-    );
+    pendingDiscardActionRef.current = onConfirmDiscard;
+    setIsDiscardDialogOpen(true);
     return true;
-  }, [formState.isDirty, navigation]);
+  }, [formState.isDirty]);
+
+  const closeDiscardDialog = useCallback(() => {
+    pendingDiscardActionRef.current = null;
+    setIsDiscardDialogOpen(false);
+  }, []);
+
+  const confirmDiscard = useCallback(() => {
+    const pendingAction = pendingDiscardActionRef.current;
+    pendingDiscardActionRef.current = null;
+    setIsDiscardDialogOpen(false);
+    if (!pendingAction) return;
+    // Let the next navigation action pass without re-triggering this guard.
+    bypassDiscardGuardRef.current = true;
+    pendingAction();
+  }, []);
 
   // Android hardware back.
   useEffect(() => {
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      return confirmDiscardIfDirty();
+      return openDiscardDialog(() => navigation.goBack());
     });
     return () => sub.remove();
-  }, [confirmDiscardIfDirty]);
+  }, [openDiscardDialog, navigation]);
 
   // Header back intercept.
   useEffect(() => {
@@ -153,21 +229,10 @@ export function EditScreen(): React.ReactElement {
       if (bypassDiscardGuardRef.current) return;
       if (!formState.isDirty) return;
       e.preventDefault();
-      Alert.alert(
-        strings.screens.edit.confirmDiscard.title,
-        strings.screens.edit.confirmDiscard.message,
-        [
-          { text: strings.screens.edit.confirmDiscard.cancel, style: 'cancel' },
-          {
-            text: strings.screens.edit.confirmDiscard.confirm,
-            style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-        ]
-      );
+      openDiscardDialog(() => navigation.dispatch(e.data.action));
     });
     return unsub;
-  }, [navigation, formState.isDirty]);
+  }, [navigation, formState.isDirty, openDiscardDialog]);
 
   const onSubmit = useCallback(
     async (values: RecipeFormValues): Promise<void> => {
@@ -258,6 +323,20 @@ export function EditScreen(): React.ReactElement {
   }, [navigation, isEdit, onDelete]);
 
   const imageUri = watch('imageUri');
+  const ingredientsErrorMessage =
+    formState.errors.ingredients &&
+    typeof formState.errors.ingredients === 'object' &&
+    'message' in formState.errors.ingredients &&
+    typeof formState.errors.ingredients.message === 'string'
+      ? formState.errors.ingredients.message
+      : undefined;
+  const instructionsErrorMessage =
+    formState.errors.instructions &&
+    typeof formState.errors.instructions === 'object' &&
+    'message' in formState.errors.instructions &&
+    typeof formState.errors.instructions.message === 'string'
+      ? formState.errors.instructions.message
+      : undefined;
 
   if (isEdit && loading) {
     return (
@@ -291,7 +370,7 @@ export function EditScreen(): React.ReactElement {
                 <TextField
                   label={strings.screens.edit.fields.title}
                   placeholder={strings.screens.edit.fields.titlePlaceholder}
-                  value={field.value}
+                  value={asString(field.value)}
                   onChangeText={field.onChange}
                   onBlur={field.onBlur}
                   error={fieldState.error?.message}
@@ -302,7 +381,7 @@ export function EditScreen(): React.ReactElement {
 
             {/* Recipe details */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-typography-950 text-right">
+              <Text className="text-lg font-bold text-typography-950">
                 {strings.screens.edit.fields.recipeDetails}
               </Text>
               <View style={{ gap: theme.spacing.md }}>
@@ -374,13 +453,13 @@ export function EditScreen(): React.ReactElement {
 
             {/* Ingredients */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-typography-950 text-right">
+              <Text className="text-lg font-bold text-typography-950">
                 {strings.screens.edit.fields.ingredients}
               </Text>
 
-              {formState.errors.ingredients?.message ? (
-                <Text className="text-base text-error-500 text-right">
-                  {formState.errors.ingredients.message}
+              {ingredientsErrorMessage ? (
+                <Text className="text-base text-error-500">
+                  {ingredientsErrorMessage}
                 </Text>
               ) : null}
 
@@ -405,13 +484,13 @@ export function EditScreen(): React.ReactElement {
 
             {/* Instructions */}
             <View style={{ gap: theme.spacing.md }}>
-              <Text className="text-lg font-bold text-typography-950 text-right">
+              <Text className="text-lg font-bold text-typography-950">
                 {strings.screens.edit.fields.instructions}
               </Text>
 
-              {typeof formState.errors.instructions?.message === 'string' ? (
-                <Text className="text-base text-error-500 text-right">
-                  {formState.errors.instructions.message}
+              {instructionsErrorMessage ? (
+                <Text className="text-base text-error-500">
+                  {instructionsErrorMessage}
                 </Text>
               ) : null}
 
@@ -456,7 +535,7 @@ export function EditScreen(): React.ReactElement {
                       render={({ field: stepField, fieldState }) => (
                         <TextField
                           placeholder={strings.screens.edit.fields.instructionsPlaceholder}
-                          value={stepField.value}
+                          value={asString(stepField.value)}
                           onChangeText={stepField.onChange}
                           onBlur={stepField.onBlur}
                           error={fieldState.error?.message}
@@ -505,6 +584,36 @@ export function EditScreen(): React.ReactElement {
             />
           </View>
         </KeyboardAvoidingView>
+
+        <AlertDialog isOpen={isDiscardDialogOpen} onClose={closeDiscardDialog} useRNModal>
+          <AlertDialogBackdrop />
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <Heading size="md">{discardDialogCopy.title}</Heading>
+            </AlertDialogHeader>
+            <AlertDialogBody>
+              <Text>{discardDialogCopy.message}</Text>
+            </AlertDialogBody>
+            <AlertDialogFooter className="justify-end">
+              <View style={{ flexDirection: 'row', gap: theme.spacing.sm }}>
+                <View style={{ minWidth: 120 }}>
+                  <Button
+                    label={discardDialogCopy.cancel}
+                    onPress={closeDiscardDialog}
+                    variant="secondary"
+                  />
+                </View>
+                <View style={{ minWidth: 120 }}>
+                  <Button
+                    label={discardDialogCopy.confirm}
+                    onPress={confirmDiscard}
+                    variant="danger"
+                  />
+                </View>
+              </View>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </SafeAreaView>
     </FormProvider>
   );

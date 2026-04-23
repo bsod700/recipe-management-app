@@ -70,7 +70,7 @@ type ITextareaInputProps = React.ComponentProps<typeof UITextarea.Input> &
 const TextareaInput = React.forwardRef<
   React.ComponentRef<typeof UITextarea.Input>,
   ITextareaInputProps
->(function TextareaInput({ className, ...props }, ref) {
+>(function TextareaInput({ className, style, ...props }, ref) {
   const { size: parentSize } = useStyleContext(SCOPE);
 
   return (
@@ -78,6 +78,7 @@ const TextareaInput = React.forwardRef<
       ref={ref}
       {...props}
       textAlignVertical="top"
+      style={[{ writingDirection: 'rtl', textAlign: 'right' }, style]}
       className={textareaInputStyle({
         parentVariants: {
           size: parentSize,

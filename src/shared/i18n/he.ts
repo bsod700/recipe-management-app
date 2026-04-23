@@ -70,6 +70,12 @@ export const strings = {
         confirm: 'צא',
         cancel: 'הישאר',
       },
+      confirmDiscardNew: {
+        title: 'המתכון החדש לא נשמר',
+        message: 'האם לצאת בלי לשמור את המתכון החדש?',
+        confirm: 'צא בלי לשמור',
+        cancel: 'הישאר',
+      },
     },
     detail: {
       statsHeading: 'תיאור המתכון',

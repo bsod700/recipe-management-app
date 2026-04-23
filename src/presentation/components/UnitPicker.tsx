@@ -41,8 +41,10 @@ export const UnitPicker = memo(function UnitPicker({
           flexDirection: 'row',
         }}
       >
+        <Text className="text-base text-typography-950" style={{ flex: 1 }}>
+          {current.label}
+        </Text>
         <Icon as={ChevronDown} size="md" className="text-typography-500" />
-        <Text className="text-base text-typography-950 text-right">{current.label}</Text>
       </Pressable>
 
       <Modal
@@ -92,18 +94,21 @@ export const UnitPicker = memo(function UnitPicker({
                     borderBottomColor: theme.colors.border,
                   }}
                 >
-                  {item.value === value ? (
-                    <Icon as={Check} size="sm" className="text-primary-500" />
-                  ) : (
-                    <Box />
-                  )}
                   <Text
-                    className={`text-lg text-right ${
+                    className={`text-lg ${
                       item.value === value ? 'text-primary-500 font-bold' : 'text-typography-950'
                     }`}
+                    style={{ flex: 1 }}
                   >
                     {item.label}
                   </Text>
+                  {item.value === value ? (
+                    <Box style={{ width: theme.minTouchTarget, alignItems: 'center' }}>
+                      <Icon as={Check} size="sm" className="text-primary-500" />
+                    </Box>
+                  ) : (
+                    <Box style={{ width: theme.minTouchTarget }} />
+                  )}
                 </Pressable>
               )}
             />

@@ -10,6 +10,8 @@
     "exactOptionalPropertyTypes": false,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "resolvePackageJsonExports": false,
     "baseUrl": ".",
     "paths": {
       "@domain/*": [

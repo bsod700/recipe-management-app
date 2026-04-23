@@ -25,17 +25,36 @@ const navTheme = {
   },
 };
 
-const textDefaultProps = (Text as typeof Text & { defaultProps?: Record<string, unknown> }).defaultProps ?? {};
-(Text as typeof Text & { defaultProps?: Record<string, unknown> }).defaultProps = {
-  ...textDefaultProps,
-  style: [{ writingDirection: 'rtl', textAlign: 'right' }, textDefaultProps.style].filter(Boolean),
+const rtlTextStyle = { writingDirection: 'rtl', textAlign: 'right' } as const;
+
+const applyGlobalRTLTextDefaults = (): void => {
+  const textComponent = Text as typeof Text & {
+    defaultProps?: React.ComponentProps<typeof Text>;
+  };
+  const textDefaults = textComponent.defaultProps ?? {};
+  const textDefaultStyle = textDefaults.style;
+  textComponent.defaultProps = {
+    ...textDefaults,
+    style: Array.isArray(textDefaultStyle)
+      ? [rtlTextStyle, ...textDefaultStyle]
+      : [rtlTextStyle, textDefaultStyle],
+  };
+
+  const inputComponent = TextInput as typeof TextInput & {
+    defaultProps?: React.ComponentProps<typeof TextInput>;
+  };
+  const inputDefaults = inputComponent.defaultProps ?? {};
+  const inputDefaultStyle = inputDefaults.style;
+  inputComponent.defaultProps = {
+    ...inputDefaults,
+    textAlign: 'left',
+    style: Array.isArray(inputDefaultStyle)
+      ? [rtlTextStyle, ...inputDefaultStyle]
+      : [rtlTextStyle, inputDefaultStyle],
+  };
 };
 
-const textInputDefaultProps = (TextInput as typeof TextInput & { defaultProps?: Record<string, unknown> }).defaultProps ?? {};
-(TextInput as typeof TextInput & { defaultProps?: Record<string, unknown> }).defaultProps = {
-  ...textInputDefaultProps,
-  style: [{ writingDirection: 'rtl', textAlign: 'right' }, textInputDefaultProps.style].filter(Boolean),
-};
+applyGlobalRTLTextDefaults();
 
 export default function App(): React.ReactElement {
   const [rtlReady, setRtlReady] = useState(I18nManager.isRTL);

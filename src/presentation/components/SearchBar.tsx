@@ -34,9 +34,8 @@ function SearchBarInner({ value, onChange }: Props): React.ReactElement {
         placeholderTextColor={theme.colors.textMuted}
         selectionColor={theme.colors.accent}
         accessibilityLabel={strings.a11y.searchField}
-        textAlign="right"
-        className="text-right text-typography-950"
-        style={{ writingDirection: 'rtl', fontSize: theme.fontBase }}
+        className="text-typography-950"
+        style={{ fontSize: theme.fontBase }}
         returnKeyType="search"
         autoCorrect={false}
       />

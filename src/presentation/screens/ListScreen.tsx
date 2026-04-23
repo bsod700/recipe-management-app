@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Trash2 } from 'lucide-react-native';
-import { View, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,8 +10,8 @@ import { useRecipeMutations } from '@application/hooks/useRecipeMutations';
 import { SearchBar } from '@presentation/components/SearchBar';
 import { RecipeCard } from '@presentation/components/RecipeCard';
 import { FAB } from '@presentation/components/FAB';
-import { Pressable } from '@/components/ui/pressable';
-import { Icon } from '@/components/ui/icon';
+import { ListDeleteRecipeAction } from '@presentation/components/ListDeleteRecipeAction';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Text } from '@/components/ui/text';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
@@ -43,78 +42,35 @@ export function ListScreen(): React.ReactElement {
     [navigation]
   );
 
-  const confirmDelete = useCallback(
-    (recipe: Recipe) => {
-      Alert.alert(
-        strings.screens.list.confirmDelete.title,
-        strings.screens.list.confirmDelete.message,
-        [
-          { text: strings.screens.list.confirmDelete.cancel, style: 'cancel' },
-          {
-            text: strings.screens.list.confirmDelete.confirm,
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await remove(recipe.id);
-                await refresh();
-              } catch {
-                Alert.alert(strings.app.name, strings.errors.deleteFailed);
-              }
-            },
-          },
-        ]
-      );
+  const handleDeleteRecipe = useCallback(
+    async (id: string): Promise<void> => {
+      try {
+        await remove(id);
+        await refresh();
+      } catch {
+        Alert.alert(strings.app.name, strings.errors.deleteFailed);
+      }
     },
     [refresh, remove]
-  );
-
-  const renderDeleteAction = useCallback(
-    (recipe: Recipe) => (
-      <View
-        style={{
-          width: 92,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Pressable
-          onPress={() => confirmDelete(recipe)}
-          accessibilityRole="button"
-          accessibilityLabel={strings.a11y.swipeDeleteRecipe}
-          disabled={deleting}
-          className="bg-error-500"
-          style={{
-            minHeight: theme.minTouchTarget,
-            minWidth: theme.minTouchTarget,
-            borderRadius: theme.radius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingHorizontal: theme.spacing.md,
-            gap: theme.spacing.xs,
-            opacity: deleting ? 0.6 : 1,
-          }}
-        >
-          <Icon as={Trash2} size="md" className="text-typography-0" />
-          <Text className="text-sm font-bold text-typography-0">
-            {strings.screens.list.swipeDelete}
-          </Text>
-        </Pressable>
-      </View>
-    ),
-    [confirmDelete, deleting]
   );
 
   const renderItem = useCallback(
     ({ item }: { item: Recipe }) => (
       <Swipeable
-        renderRightActions={() => renderDeleteAction(item)}
+        renderRightActions={() => (
+          <ListDeleteRecipeAction
+            recipeId={item.id}
+            deleting={deleting}
+            onConfirmDelete={handleDeleteRecipe}
+          />
+        )}
         overshootRight={false}
         rightThreshold={40}
       >
         <RecipeCard recipe={item} onPress={openDetail} />
       </Swipeable>
     ),
-    [openDetail, renderDeleteAction]
+    [deleting, handleDeleteRecipe, openDetail]
   );
 
   const keyExtractor = useCallback((item: Recipe) => item.id, []);
@@ -125,8 +81,40 @@ export function ListScreen(): React.ReactElement {
         <SearchBar value={search} onChange={setSearch} />
 
         {loading && recipes.length === 0 ? (
-          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-            <ActivityIndicator color={theme.colors.accent} size="large" />
+          <View style={{ flex: 1, gap: theme.spacing.md }}>
+            {Array.from({ length: 6 }).map((_, index) => (
+              <View
+                key={index}
+                className="bg-secondary-500 border border-outline-500"
+                style={{
+                  minHeight: theme.minTouchTarget + 24,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderRadius: theme.radius.lg,
+                  padding: theme.spacing.md,
+                  gap: theme.spacing.md,
+                }}
+              >
+                <Skeleton
+                  variant="rounded"
+                  style={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: theme.radius.md,
+                  }}
+                />
+                <View style={{ flex: 1, gap: theme.spacing.sm }}>
+                  <Skeleton
+                    variant="rounded"
+                    style={{ width: '72%', height: 20, borderRadius: theme.radius.sm }}
+                  />
+                  <Skeleton
+                    variant="rounded"
+                    style={{ width: '38%', height: 14, borderRadius: theme.radius.sm }}
+                  />
+                </View>
+              </View>
+            ))}
           </View>
         ) : error ? (
           <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>

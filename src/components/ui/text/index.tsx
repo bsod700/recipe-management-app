@@ -11,6 +11,7 @@ const Text = React.forwardRef<React.ComponentRef<typeof RNText>, ITextProps>(
   function Text(
     {
       className,
+      style,
       isTruncated,
       bold,
       underline,
@@ -36,6 +37,7 @@ const Text = React.forwardRef<React.ComponentRef<typeof RNText>, ITextProps>(
           highlight: highlight as boolean,
           class: className,
         })}
+        style={[{ writingDirection: 'rtl', textAlign: 'left' }, style]}
         {...props}
         ref={ref}
       />

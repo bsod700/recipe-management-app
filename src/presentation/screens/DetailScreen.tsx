@@ -6,7 +6,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@presentation/navigation/types';
 import { useRecipe } from '@application/hooks/useRecipe';
-import { Pressable } from '@/components/ui/pressable';
+import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { Text } from '@/components/ui/text';
 import { strings } from '@shared/i18n/he';
@@ -22,16 +22,6 @@ function unitLabel(unit: IngredientUnit): string {
   return UNIT_OPTIONS.find((u) => u.value === unit)?.label ?? unit;
 }
 
-function forceRtlText(value: string): string {
-  const RTL_EMBEDDING = '\u202B';
-  const POP_DIRECTIONAL_FORMATTING = '\u202C';
-  const RTL_MARK = '\u200F';
-  return value
-    .split('\n')
-    .map((line) => `${RTL_EMBEDDING}${RTL_MARK}${line}${POP_DIRECTIONAL_FORMATTING}`)
-    .join('\n');
-}
-
 export function DetailScreen(): React.ReactElement {
   const route = useRoute<Props['route']>();
   const navigation = useNavigation<Nav>();
@@ -42,26 +32,23 @@ export function DetailScreen(): React.ReactElement {
     navigation.setOptions({
       title: recipe?.title ?? '',
       headerRight: () => (
-        <Pressable
+        <Button
           onPress={() => navigation.navigate('RecipeEdit', { id })}
-          accessibilityRole="button"
+          action="secondary"
+          variant="solid"
           hitSlop={12}
-          className="bg-secondary-500 border border-outline-500"
+          className="border border-outline-500"
           style={{
             paddingHorizontal: theme.spacing.md,
             minHeight: theme.minTouchTarget,
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexDirection: 'row',
-            gap: theme.spacing.xs,
             borderRadius: theme.radius.md,
           }}
         >
-          <Icon as={Pencil} size="sm" className="text-primary-500" />
-          <Text className="text-base text-primary-500 font-bold">
+          <ButtonText className="text-base text-primary-500 font-bold">
             {strings.screens.detail.edit}
-          </Text>
-        </Pressable>
+          </ButtonText>
+          <ButtonIcon as={Pencil} size="sm" className="text-primary-500" />
+        </Button>
       ),
     });
   }, [navigation, recipe?.title, id]);
@@ -124,8 +111,8 @@ export function DetailScreen(): React.ReactElement {
           />
         ) : null}
 
-        <View style={{ gap: theme.spacing.lg }}>
-          <Text className="text-xl font-bold text-typography-950 text-right">
+        <View style={{ gap: theme.spacing.lg }} >
+          <Text className="text-xl font-bold text-typography-950">
             {strings.screens.detail.statsHeading}
           </Text>
           <View
@@ -151,9 +138,12 @@ export function DetailScreen(): React.ReactElement {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
                   <Icon as={card.icon} size="sm" className="text-primary-500" />
-                  <Text className="text-sm text-typography-950 text-right">{card.label}</Text>
+                  <Text className="text-sm text-typography-950">
+                    {card.label}
+                  </Text>
+                  
                 </View>
-                <Text className="text-lg font-bold text-typography-950 text-left">
+                <Text className="text-lg font-bold text-typography-950">
                   {card.value}
                 </Text>
               </View>
@@ -162,7 +152,7 @@ export function DetailScreen(): React.ReactElement {
         </View>
 
         <View style={{ gap: theme.spacing.md }}>
-          <Text className="text-xl font-bold text-typography-950 text-right">
+          <Text className="text-xl font-bold text-typography-950">
             {strings.screens.detail.ingredientsHeading}
           </Text>
           <View style={{ gap: theme.spacing.sm }}>
@@ -180,7 +170,7 @@ export function DetailScreen(): React.ReactElement {
                   borderColor: theme.colors.border,
                 }}
               >
-                <Text className="text-base text-typography-950 text-right font-semibold">
+                <Text className="text-base text-typography-950 font-semibold">
                   {ing.name}
                 </Text>
                 <Text className="text-base text-typography-500">
@@ -192,7 +182,7 @@ export function DetailScreen(): React.ReactElement {
         </View>
 
         <View style={{ gap: theme.spacing.md }}>
-          <Text className="text-xl font-bold text-typography-950 text-right">
+          <Text className="text-xl font-bold text-typography-950">
             {strings.screens.detail.instructionsHeading}
           </Text>
           <View
@@ -221,12 +211,10 @@ export function DetailScreen(): React.ReactElement {
                     className="text-base text-typography-950"
                     style={{
                       flex: 1,
-                      textAlign: 'left',
-                      writingDirection: 'rtl',
                       lineHeight: 24,
                     }}
                   >
-                    {forceRtlText(step)}
+                    {step}
                   </Text>
                 </View>
               ))}

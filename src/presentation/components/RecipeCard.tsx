@@ -56,17 +56,16 @@ function RecipeCardInner({ recipe, onPress }: Props): React.ReactElement {
         </Box>
       )}
 
-      <Box style={{ flex: 1 }}>
-        <Text
-          numberOfLines={2}
-          className="text-lg font-bold text-typography-950 text-left"
-        >
-          {recipe.title}
-        </Text>
-        <Text className="text-base text-typography-500 text-left mt-1">
-          {recipe.ingredients.length}{' '}
-          {recipe.ingredients.length === 1 ? 'מרכיב' : 'מרכיבים'}
-        </Text>
+      <Box className="flex-0">
+        <Box className="flex-0 flex-row justify-between w-full">
+          <Text
+            numberOfLines={2}
+            className="text-lg font-bold text-typography-950"
+          >
+            {recipe.title}
+          </Text>
+        </Box>
+       
         <Box
           style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, marginTop: theme.spacing.xs }}
         >
