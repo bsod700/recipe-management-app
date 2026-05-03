@@ -1,0 +1,8 @@
+name = "recipe-ai-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-04-28"
+
+[vars]
+OPENROUTER_OCR_MODEL = "google/gemini-2.5-flash-lite-preview-06-17:free"
+OPENROUTER_MERGE_MODEL = "google/gemini-2.5-flash-lite-preview-06-17:free"
+GROQ_MERGE_MODEL = "llama-3.1-8b-instant"

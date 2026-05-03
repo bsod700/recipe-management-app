@@ -22,7 +22,7 @@ function PhotoPickerInner({ uri, onChange }: Props): React.ReactElement {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
     });

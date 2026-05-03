@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.29.3",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
     "build:apk": "export NODE_ENV=production ANDROID_HOME=\"${ANDROID_HOME:-$HOME/Library/Android/sdk}\" ANDROID_SDK_ROOT=\"${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}\" && expo prebuild -p android && mkdir -p android/app/src/main/res/drawable && printf '%s\\n' '<?xml version=\"1.0\" encoding=\"utf-8\"?>' '<layer-list xmlns:android=\"http://schemas.android.com/apk/res/android\">' '  <item>' '    <shape android:shape=\"rectangle\">' '      <solid android:color=\"#0B0B0F\" />' '    </shape>' '  </item>' '</layer-list>' > android/app/src/main/res/drawable/splashscreen_logo.xml && cd android && ./gradlew --no-daemon -Dorg.gradle.jvmargs='-Xmx6g -XX:MaxMetaspaceSize=2g -Dfile.encoding=UTF-8' assembleRelease -x lint -x lintVitalAnalyzeRelease",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --ext .ts,.tsx",
@@ -23,6 +23,7 @@
     "expo": "~54.0.33",
     "expo-asset": "~12.0.12",
     "expo-file-system": "~19.0.21",
+    "expo-image-manipulator": "^55.0.15",
     "expo-image-picker": "~17.0.10",
     "expo-splash-screen": "~31.0.13",
     "expo-sqlite": "~16.0.10",

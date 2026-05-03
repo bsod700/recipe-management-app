@@ -29,6 +29,10 @@ export const strings = {
       titleEdit: 'עריכת מתכון',
       feedback: {
         saveSuccess: 'המתכון נשמר בהצלחה',
+        scanSuccess: 'הפרטים מולאו מהתמונות. בדוק וערוך לפני שמירה.',
+        scanPartial: 'חלק מהשדות מולאו. כדאי לעבור על המתכון לפני שמירה.',
+        scanInProgress: 'מעדכן את טיוטת המתכון מהתמונות, רגע...',
+        scanContextReset: 'טיוטת ה-AI אופסה. הסריקה הבאה תתחיל מחדש.',
       },
       fields: {
         title: 'שם המתכון',
@@ -46,6 +50,7 @@ export const strings = {
         instructions: 'הוראות הכנה',
         instructionsPlaceholder: 'תאר את שלבי ההכנה...',
         photo: 'תמונה (אופציונלי)',
+        aiScan: 'סריקה חכמה מתמונות',
       },
       actions: {
         addIngredient: 'הוסף מרכיב',
@@ -54,6 +59,8 @@ export const strings = {
         removeStep: 'הסר שלב',
         pickPhoto: 'בחר תמונה',
         removePhoto: 'הסר תמונה',
+        scanFromImages: 'מלא אוטומטית מתמונות',
+        resetAiScan: 'אפס טיוטת AI',
         save: 'שמור מתכון',
         cancel: 'ביטול',
         delete: 'מחק מתכון',
@@ -111,6 +118,14 @@ export const strings = {
     saveFailed: 'שמירת המתכון נכשלה.',
     deleteFailed: 'מחיקת המתכון נכשלה.',
     imagePickerDenied: 'אין הרשאה לגשת לגלריה.',
+    scanNoImagesSelected: 'לא נבחרו תמונות לסריקה.',
+    scanNoEndpoint: 'חסרה הגדרת שרת לסריקת מתכונים.',
+    scanFailed: 'לא הצלחנו לפענח את המתכון מהתמונות. נסה שוב עם תמונה ברורה יותר.',
+    scanTimeout: 'הסריקה נמשכת יותר מדי זמן. נסה שוב.',
+    scanNetwork: 'אין תקשורת כרגע. בדוק אינטרנט ונסה שוב.',
+    scanProxyFailed: 'שרת הסריקה נכשל. נסה שוב בעוד רגע.',
+    scanUpstreamBusy: 'שירות ה-AI עמוס כרגע. נסה שוב בעוד רגע.',
+    scanInvalidResponse: 'התקבלה תשובה לא תקינה מה-AI. נסה תמונה אחרת.',
   },
   a11y: {
     searchField: 'שדה חיפוש מתכונים',
@@ -120,5 +135,6 @@ export const strings = {
     swipeDeleteRecipe: 'מחיקת מתכון בהחלקה',
     removeIngredientRow: 'הסר שורת מרכיב',
     recipeImage: 'תמונת המתכון',
+    recipeAiScanButton: 'כפתור מילוי אוטומטי מתמונות',
   },
 } as const;

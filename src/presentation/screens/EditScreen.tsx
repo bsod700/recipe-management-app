@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Plus, Save, Trash2, X } from 'lucide-react-native';
+import { ImagePlus, Plus, RotateCcw, Save, Trash2, X } from 'lucide-react-native';
 import {
   View,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   BackHandler,
   ActivityIndicator,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ReactHookForm from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,6 +46,10 @@ import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { DEFAULT_UNIT } from '@shared/constants/units';
 import { formatStepNumber, parseInstructionSteps, serializeInstructionSteps } from '@shared/utils/instructions';
+import { extractTextFromImages, mergeRecipeFromContext } from '@application/services/recipeImageAutofill';
+import { RecipeScanError } from '@application/services/recipeImageAutofill';
+import { mapAutofillResponseToFormPatch } from '@domain/schemas/recipeImageAutofillSchema';
+import { MAX_SCAN_IMAGES, prepareRecipeScanImages } from '@shared/utils/recipeScanImages';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeEdit'>;
 type Nav = NativeStackNavigationProp<RootStackParamList, 'RecipeEdit'>;
@@ -70,6 +75,7 @@ type RHFUseFieldArrayReturn = {
   fields: Array<{ id: string }>;
   append: (value: unknown) => void;
   remove: (index: number) => void;
+  replace: (values: ReadonlyArray<unknown>) => void;
 };
 type RHFUseFieldArrayHook = (props: {
   control: unknown;
@@ -81,10 +87,10 @@ type RHFUseFormReturn = {
     onValid: (values: RecipeFormValues) => Promise<void> | void
   ) => () => void;
   reset: (values?: RecipeFormValues) => void;
-  watch: (name: 'imageUri') => string | undefined;
+  watch: (name: string) => unknown;
   setValue: (
-    name: 'imageUri',
-    value: string | undefined,
+    name: string,
+    value: unknown,
     options?: { shouldDirty?: boolean }
   ) => void;
   getValues: () => RecipeFormValues;
@@ -99,7 +105,7 @@ type RHFUseFormHook = (props: {
   mode: 'onBlur';
 }) => RHFUseFormReturn;
 
-const { Controller, FormProvider, useFieldArray, useForm } = ReactHookForm as {
+const { Controller, FormProvider, useFieldArray, useForm } = ReactHookForm as unknown as {
   Controller: RHFControllerComponent;
   FormProvider: RHFFormProviderComponent;
   useFieldArray: RHFUseFieldArrayHook;
@@ -123,6 +129,35 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
+function mapScanErrorToMessage(error: unknown): string {
+  if (error instanceof RecipeScanError) {
+    if (error.kind === 'proxy_http') {
+      if (error.errorCode === 'model_upstream_failed') {
+        return strings.errors.scanUpstreamBusy;
+      }
+      if (error.errorCode === 'model_parse_failed') {
+        return strings.errors.scanInvalidResponse;
+      }
+    }
+    switch (error.kind) {
+      case 'endpoint_missing':
+        return strings.errors.scanNoEndpoint;
+      case 'timeout':
+        return strings.errors.scanTimeout;
+      case 'network':
+        return strings.errors.scanNetwork;
+      case 'proxy_http':
+        return strings.errors.scanProxyFailed;
+      case 'proxy_invalid_json':
+      case 'validation_failed':
+        return strings.errors.scanInvalidResponse;
+      default:
+        return strings.errors.scanFailed;
+    }
+  }
+  return strings.errors.scanFailed;
+}
+
 export function EditScreen(): React.ReactElement {
   const route = useRoute<Props['route']>();
   const navigation = useNavigation<Nav>();
@@ -134,6 +169,8 @@ export function EditScreen(): React.ReactElement {
   const bypassDiscardGuardRef = useRef(false);
   const pendingDiscardActionRef = useRef<null | (() => void)>(null);
   const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+  const [isScanningFromImages, setIsScanningFromImages] = useState(false);
+  const [scanContextText, setScanContextText] = useState('');
   const toast = useToast();
 
   const defaultValues = useMemo<RecipeFormValues>(
@@ -176,6 +213,7 @@ export function EditScreen(): React.ReactElement {
       instructions: parseInstructionSteps(recipe.instructions).map((text) => ({ text })),
       imageUri: recipe.imageUri,
     });
+    setScanContextText('');
   }, [isEdit, recipe, reset]);
 
   // Set dynamic header title.
@@ -298,10 +336,170 @@ export function EditScreen(): React.ReactElement {
     );
   }, [id, navigation, remove, reset, methods]);
 
+  const imageUri = watch('imageUri');
+  const imageUriValue = typeof imageUri === 'string' ? imageUri : undefined;
+  const ingredientsErrorMessage =
+    formState.errors.ingredients &&
+    typeof formState.errors.ingredients === 'object' &&
+    'message' in formState.errors.ingredients &&
+    typeof formState.errors.ingredients.message === 'string'
+      ? formState.errors.ingredients.message
+      : undefined;
+  const instructionsErrorMessage =
+    formState.errors.instructions &&
+    typeof formState.errors.instructions === 'object' &&
+    'message' in formState.errors.instructions &&
+    typeof formState.errors.instructions.message === 'string'
+      ? formState.errors.instructions.message
+      : undefined;
+
+  const onPickScanImages = useCallback(
+    async (assets: ReadonlyArray<ImagePicker.ImagePickerAsset>): Promise<void> => {
+      if (!process.env.EXPO_PUBLIC_RECIPE_AI_PROXY_URL) {
+        Alert.alert(strings.app.name, strings.errors.scanNoEndpoint);
+        return;
+      }
+      try {
+        console.warn(`[recipe-scan] ui:start images=${assets.length}`);
+        setIsScanningFromImages(true);
+        toast.show({
+          placement: 'top',
+          duration: 1_200,
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`scan-progress-${toastId}`} action="info" variant="solid">
+              <ToastTitle>{strings.screens.edit.feedback.scanInProgress}</ToastTitle>
+            </Toast>
+          ),
+        });
+        const prepared = await prepareRecipeScanImages(assets);
+        if (prepared.images.length === 0) {
+          Alert.alert(strings.app.name, strings.errors.scanNoImagesSelected);
+          return;
+        }
+
+        let nextContextText = scanContextText;
+        const extractedTexts = await extractTextFromImages(prepared.images, {
+          maxRetryCount: 0,
+          baseTimeoutMs: 14_000,
+        });
+        const normalizedBatchText = extractedTexts.texts
+          .map((text) => text.trim())
+          .filter((text) => text.length > 0)
+          .join('\n\n');
+        if (normalizedBatchText.length > 0) {
+          nextContextText = nextContextText.length > 0
+            ? `${nextContextText}\n\n${normalizedBatchText}`
+            : normalizedBatchText;
+        }
+
+        setScanContextText(nextContextText);
+        const merged = await mergeRecipeFromContext(nextContextText, {
+          maxRetryCount: 1,
+          baseTimeoutMs: 16_000,
+        });
+        const patch = mapAutofillResponseToFormPatch(merged);
+        const current = methods.getValues();
+
+        if (typeof patch.values.title === 'string') {
+          setValue('title', patch.values.title, { shouldDirty: true });
+        }
+        if ('prepTimeMinutes' in patch.values) {
+          setValue('prepTimeMinutes', patch.values.prepTimeMinutes, { shouldDirty: true });
+        }
+        if ('cookTimeMinutes' in patch.values) {
+          setValue('cookTimeMinutes', patch.values.cookTimeMinutes, { shouldDirty: true });
+        }
+        if ('servings' in patch.values) {
+          setValue('servings', patch.values.servings, { shouldDirty: true });
+        }
+        if (patch.values.ingredients && patch.values.ingredients.length > 0) {
+          ingredientFields.replace(patch.values.ingredients);
+        }
+        if (patch.values.instructions && patch.values.instructions.length > 0) {
+          instructionFields.replace(patch.values.instructions);
+        }
+
+        if (!current.imageUri && prepared.primaryImageUri) {
+          setValue('imageUri', prepared.primaryImageUri, { shouldDirty: true });
+        }
+
+        const hasPartialWarnings =
+          patch.warnings.length > 0 ||
+          (Array.isArray(extractedTexts.warnings) && extractedTexts.warnings.length > 0);
+        const feedbackMessage = hasPartialWarnings
+          ? strings.screens.edit.feedback.scanPartial
+          : strings.screens.edit.feedback.scanSuccess;
+        toast.show({
+          placement: 'top',
+          duration: 2_400,
+          render: ({ id: toastId }) => (
+            <Toast nativeID={`scan-result-${toastId}`} action="success" variant="solid">
+              <ToastTitle>{feedbackMessage}</ToastTitle>
+            </Toast>
+          ),
+        });
+      } catch (error) {
+        const message = mapScanErrorToMessage(error);
+        const requestId = error instanceof RecipeScanError ? error.requestId : undefined;
+        const provider = error instanceof RecipeScanError ? error.provider : undefined;
+        const stage = error instanceof RecipeScanError ? error.stage : undefined;
+        const logLine = requestId
+          ? `[recipe-scan] ui:failure requestId=${requestId} stage=${stage ?? 'unknown'} provider=${provider ?? 'unknown'} message=${message}`
+          : `[recipe-scan] ui:failure message=${message}`;
+        console.error(logLine, error);
+        Alert.alert(
+          strings.app.name,
+          requestId ? `${message}\nrequestId: ${requestId}` : message
+        );
+      } finally {
+        setIsScanningFromImages(false);
+      }
+    },
+    [ingredientFields, instructionFields, methods, scanContextText, setValue, toast]
+  );
+
+  const onPressScanInHeader = useCallback(async (): Promise<void> => {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      Alert.alert(strings.app.name, strings.errors.imagePickerDenied);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: MAX_SCAN_IMAGES,
+      allowsEditing: false,
+      quality: 1,
+      orderedSelection: true,
+    });
+    if (result.canceled) return;
+    if (result.assets.length === 0) {
+      Alert.alert(strings.app.name, strings.errors.scanNoImagesSelected);
+      return;
+    }
+    await onPickScanImages(result.assets);
+  }, [onPickScanImages]);
+
+  const onResetScanContext = useCallback(() => {
+    if (scanContextText.length === 0) return;
+    setScanContextText('');
+    toast.show({
+      placement: 'top',
+      duration: 1_800,
+      render: ({ id: toastId }) => (
+        <Toast nativeID={`scan-reset-${toastId}`} action="info" variant="solid">
+          <ToastTitle>{strings.screens.edit.feedback.scanContextReset}</ToastTitle>
+        </Toast>
+      ),
+    });
+  }, [scanContextText, toast]);
+
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: isEdit
-        ? () => (
+      headerLeft: undefined,
+      headerRight: () => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.sm }}>
+          {isEdit ? (
             <Pressable
               onPress={onDelete}
               accessibilityRole="button"
@@ -317,26 +515,55 @@ export function EditScreen(): React.ReactElement {
             >
               <Icon as={Trash2} size="md" className="text-error-500" />
             </Pressable>
-          )
-        : undefined,
+          ) : null}
+          <Pressable
+            onPress={onResetScanContext}
+            disabled={scanContextText.length === 0 || isScanningFromImages}
+            accessibilityRole="button"
+            accessibilityLabel={strings.screens.edit.actions.resetAiScan}
+            className="bg-secondary-500 border border-outline-500 rounded-md"
+            style={{
+              minHeight: theme.minTouchTarget,
+              minWidth: theme.minTouchTarget,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: theme.spacing.sm,
+            }}
+          >
+            <Icon as={RotateCcw} size="md" className="text-typography-950" />
+          </Pressable>
+          <Pressable
+            onPress={onPressScanInHeader}
+            disabled={isScanningFromImages}
+            accessibilityRole="button"
+            accessibilityLabel={strings.a11y.recipeAiScanButton}
+            className="bg-secondary-500 border border-outline-500 rounded-md"
+            style={{
+              minHeight: theme.minTouchTarget,
+              minWidth: theme.minTouchTarget,
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingHorizontal: theme.spacing.sm,
+            }}
+          >
+            {isScanningFromImages ? (
+              <ActivityIndicator size="small" color={theme.colors.accent} />
+            ) : (
+              <Icon as={ImagePlus} size="md" className="text-primary-500" />
+            )}
+          </Pressable>
+        </View>
+      ),
     });
-  }, [navigation, isEdit, onDelete]);
-
-  const imageUri = watch('imageUri');
-  const ingredientsErrorMessage =
-    formState.errors.ingredients &&
-    typeof formState.errors.ingredients === 'object' &&
-    'message' in formState.errors.ingredients &&
-    typeof formState.errors.ingredients.message === 'string'
-      ? formState.errors.ingredients.message
-      : undefined;
-  const instructionsErrorMessage =
-    formState.errors.instructions &&
-    typeof formState.errors.instructions === 'object' &&
-    'message' in formState.errors.instructions &&
-    typeof formState.errors.instructions.message === 'string'
-      ? formState.errors.instructions.message
-      : undefined;
+  }, [
+    navigation,
+    isEdit,
+    isScanningFromImages,
+    onDelete,
+    onPressScanInHeader,
+    onResetScanContext,
+    scanContextText.length,
+  ]);
 
   if (isEdit && loading) {
     return (
@@ -558,7 +785,7 @@ export function EditScreen(): React.ReactElement {
 
             {/* Photo */}
             <PhotoPicker
-              uri={imageUri}
+              uri={imageUriValue}
               onChange={(uri) =>
                 setValue('imageUri', uri, { shouldDirty: true })
               }
