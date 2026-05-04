@@ -1,11 +1,10 @@
 import React, { memo } from 'react';
-import { Image } from 'react-native';
-import { ChefHat, Clock3, UtensilsCrossed } from 'lucide-react-native';
+import { Image, View } from 'react-native';
+import { Clock3, UtensilsCrossed } from 'lucide-react-native';
 import type { Recipe } from '@domain/entities/Recipe';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { Pressable } from '@/components/ui/pressable';
-import { Box } from '@/components/ui/box';
 import { Text } from '@/components/ui/text';
 import { Icon } from '@/components/ui/icon';
 
@@ -20,63 +19,96 @@ function RecipeCardInner({ recipe, onPress }: Props): React.ReactElement {
       onPress={() => onPress(recipe.id)}
       accessibilityRole="button"
       accessibilityLabel={`${strings.a11y.recipeCard}: ${recipe.title}`}
-      className="bg-secondary-500 border border-outline-500"
       style={{
-        minHeight: theme.minTouchTarget + 24,
+        backgroundColor: 'rgba(224,207,191,0.25)',
+        borderColor: 'rgba(99,48,19,0.1)',
+        borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: theme.radius.lg,
-        padding: theme.spacing.md,
-        gap: theme.spacing.md,
+        borderRadius: 16,
+        padding: 8,
+        gap: 16,
       }}
     >
+      <View style={{ flex: 1, alignItems: 'flex-end', justifyContent: 'space-between', height: '100%' }}>
+        <View style={{ width: '100%', alignItems: 'flex-start' }}>
+          {recipe.category ? (
+            <View
+                style={{
+                  borderRadius: 32,
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  backgroundColor: theme.colors.accent,
+                }}
+              >
+                <Text style={{ color: '#FEFDFB', fontWeight: '600', fontSize: 12 }}>
+                  {recipe.category}
+                </Text>
+              </View>
+            ) : null}
+          </View>
+
+          <Text
+            numberOfLines={1}
+            style={{ color: theme.colors.text, fontWeight: '700', fontSize: 28 }}
+          >
+            {recipe.title}
+          </Text>
+        
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 16,
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={{ color: theme.colors.text, fontSize: 16 }}>
+              {recipe.servings}
+            </Text>
+            <Icon as={UtensilsCrossed} size="sm" style={{ color: theme.colors.text }} />
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={{ color: theme.colors.text, fontSize: 16 }}>
+              {recipe.prepTimeMinutes + recipe.cookTimeMinutes} דקות
+            </Text>
+            <Icon as={Clock3} size="sm" style={{ color: theme.colors.text }} />
+          </View>
+        </View>
+      </View>
+
       {recipe.imageUri ? (
         <Image
           source={{ uri: recipe.imageUri }}
           accessibilityLabel={strings.a11y.recipeImage}
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: theme.radius.md,
-            backgroundColor: theme.colors.bg,
+            width: 100,
+            height: 100,
+            borderRadius: 8,
+            backgroundColor: theme.colors.surfaceAlt,
           }}
         />
       ) : (
-        <Box
-          className="bg-background-0"
+        <View
           style={{
-            width: 64,
-            height: 64,
-            borderRadius: theme.radius.md,
-            alignItems: 'center',
-            justifyContent: 'center',
+            width: 100,
+            height: 100,
+            borderRadius: 8,
+            backgroundColor: theme.colors.surfaceAlt,
           }}
         >
-          <Icon as={ChefHat} size="xl" className="text-primary-500" />
-        </Box>
-      )}
-
-      <Box className="flex-0">
-        <Box className="flex-0 flex-row justify-between w-full">
           <Text
-            numberOfLines={2}
-            className="text-lg font-bold text-typography-950"
+            style={{
+              color: theme.colors.textMuted,
+              textAlign: 'center',
+              marginTop: 40,
+              fontSize: 12,
+            }}
           >
-            {recipe.title}
+            אין תמונה
           </Text>
-        </Box>
-       
-        <Box
-          style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs, marginTop: theme.spacing.xs }}
-        >
-          <Icon as={Clock3} size="xs" className="text-typography-500" />
-          <Text className="text-sm text-typography-500">
-            {recipe.prepTimeMinutes + recipe.cookTimeMinutes} דק׳
-          </Text>
-          <Icon as={UtensilsCrossed} size="xs" className="text-typography-500" />
-          <Text className="text-sm text-typography-500">{recipe.servings}</Text>
-        </Box>
-      </Box>
+        </View>
+      )}
     </Pressable>
   );
 }

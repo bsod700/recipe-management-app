@@ -27,6 +27,8 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
     CREATE TABLE IF NOT EXISTS recipes (
       id TEXT PRIMARY KEY NOT NULL,
       title TEXT NOT NULL,
+      category TEXT,
+      link TEXT,
       prep_time_minutes INTEGER NOT NULL DEFAULT 0,
       cook_time_minutes INTEGER NOT NULL DEFAULT 0,
       servings INTEGER NOT NULL DEFAULT 0,
@@ -60,6 +62,12 @@ async function migrate(db: SQLite.SQLiteDatabase): Promise<void> {
     await db.runAsync(
       'ALTER TABLE recipes ADD COLUMN servings INTEGER NOT NULL DEFAULT 0;'
     );
+  }
+  if (!existingColumns.has('category')) {
+    await db.runAsync('ALTER TABLE recipes ADD COLUMN category TEXT;');
+  }
+  if (!existingColumns.has('link')) {
+    await db.runAsync('ALTER TABLE recipes ADD COLUMN link TEXT;');
   }
 }
 

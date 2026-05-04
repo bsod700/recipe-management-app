@@ -31,6 +31,18 @@ export const recipeFormSchema = z
       .trim()
       .min(1, strings.errors.titleRequired)
       .max(120, strings.errors.tooLong),
+    category: z
+      .string()
+      .trim()
+      .max(40, strings.errors.tooLong)
+      .optional()
+      .or(z.literal('')),
+    link: z
+      .string()
+      .trim()
+      .max(512, strings.errors.tooLong)
+      .optional()
+      .or(z.literal('')),
     prepTimeMinutes: z
       .number({ invalid_type_error: strings.errors.timeInvalid })
       .int(strings.errors.timeInvalid)

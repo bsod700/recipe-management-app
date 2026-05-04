@@ -14,8 +14,12 @@ function SearchBarInner({ value, onChange }: Props): React.ReactElement {
     <Input
       variant="outline"
       size="lg"
-      className="bg-secondary-500 border-outline-500 rounded-lg"
-      style={{ minHeight: theme.minTouchTarget }}
+      className="rounded-lg"
+      style={{
+        minHeight: theme.minTouchTarget,
+        backgroundColor: 'rgba(224,207,191,0.25)',
+        borderColor: 'rgba(99,48,19,0.1)',
+      }}
     >
       {value.length > 0 ? (
         <InputSlot
@@ -24,7 +28,7 @@ function SearchBarInner({ value, onChange }: Props): React.ReactElement {
           accessibilityLabel={strings.a11y.clearSearch}
           style={{ minWidth: theme.minTouchTarget, minHeight: theme.minTouchTarget }}
         >
-          <InputIcon as={X} className="text-typography-500" />
+          <InputIcon as={X} style={{ color: theme.colors.textMuted }} />
         </InputSlot>
       ) : null}
       <InputField
@@ -34,13 +38,12 @@ function SearchBarInner({ value, onChange }: Props): React.ReactElement {
         placeholderTextColor={theme.colors.textMuted}
         selectionColor={theme.colors.accent}
         accessibilityLabel={strings.a11y.searchField}
-        className="text-typography-950"
-        style={{ fontSize: theme.fontBase }}
+        style={{ fontSize: theme.fontBase, color: theme.colors.text }}
         returnKeyType="search"
         autoCorrect={false}
       />
       <InputSlot style={{ minWidth: theme.minTouchTarget, minHeight: theme.minTouchTarget }}>
-        <InputIcon as={Search} className="text-typography-500" />
+        <InputIcon as={Search} style={{ color: theme.colors.textMuted }} />
       </InputSlot>
     </Input>
   );

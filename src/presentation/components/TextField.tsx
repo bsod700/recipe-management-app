@@ -38,14 +38,18 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
         <Textarea
           size="md"
           isInvalid={hasError}
-          className="bg-secondary-500 border-outline-500 rounded-lg"
-          style={{ minHeight: minHeight ?? 120 }}
+          className="rounded-lg"
+          style={{
+            minHeight: minHeight ?? 120,
+            backgroundColor: 'rgba(224,207,191,0.25)',
+            borderColor: 'rgba(99,48,19,0.1)',
+          }}
         >
           <TextareaInput
             placeholderTextColor={theme.colors.textMuted}
             selectionColor={theme.colors.accent}
             textAlignVertical="top"
-            className="text-typography-950"
+            style={{ color: theme.colors.text }}
             {...rest}
           />
         </Textarea>
@@ -54,15 +58,18 @@ export const TextField = forwardRef<TextInput, Props>(function TextField(
           size="lg"
           variant="outline"
           isInvalid={hasError}
-          className="bg-secondary-500 border-outline-500 rounded-lg"
-          style={{ minHeight: minHeight ?? theme.minTouchTarget }}
+          className="rounded-lg"
+          style={{
+            minHeight: minHeight ?? theme.minTouchTarget,
+            backgroundColor: 'rgba(224,207,191,0.25)',
+            borderColor: 'rgba(99,48,19,0.1)',
+          }}
         >
           <InputField
             placeholderTextColor={theme.colors.textMuted}
             selectionColor={theme.colors.accent}
             textAlignVertical="center"
-            className="text-typography-950"
-            style={{ fontSize: theme.fontBase }}
+            style={{ fontSize: theme.fontBase, color: theme.colors.text }}
             {...rest}
           />
         </Input>

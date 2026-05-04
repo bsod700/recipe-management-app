@@ -28,15 +28,15 @@ const variantAction: Record<Variant, 'primary' | 'secondary' | 'negative'> = {
 };
 
 const variantClassName: Record<Variant, string> = {
-  primary: 'bg-primary-500',
-  secondary: 'bg-secondary-500 border border-outline-500',
-  danger: 'bg-error-500',
+  primary: '',
+  secondary: '',
+  danger: '',
 };
 
 const variantTextClassName: Record<Variant, string> = {
-  primary: 'text-typography-0',
-  secondary: 'text-typography-950',
-  danger: 'text-typography-0',
+  primary: '',
+  secondary: '',
+  danger: '',
 };
 
 export const Button = memo(function Button({
@@ -59,17 +59,35 @@ export const Button = memo(function Button({
       isDisabled={isInactive}
       accessibilityLabel={accessibilityLabel ?? label}
       testID={testID}
-      style={{ minHeight: theme.minTouchTarget, borderRadius: theme.radius.lg }}
       className={`${variantClassName[variant]} ${isInactive ? 'opacity-50' : ''}`}
+      style={{
+        minHeight: theme.minTouchTarget,
+        borderRadius: theme.radius.lg,
+        backgroundColor:
+          variant === 'primary'
+            ? theme.colors.accent
+            : variant === 'danger'
+              ? theme.colors.danger
+              : theme.colors.surfaceAlt,
+        borderWidth: 1,
+        borderColor: 'rgba(99,48,19,0.1)',
+      }}
     >
       {loading ? (
-        <ButtonSpinner color={theme.colors.bg} />
+        <ButtonSpinner color={variant === 'secondary' ? theme.colors.text : '#FEFDFB'} />
       ) : (
         <>
           {icon ? (
-            <ButtonIcon as={icon} className={variantTextClassName[variant]} />
+            <ButtonIcon
+              as={icon}
+              className={variantTextClassName[variant]}
+              style={{ color: variant === 'secondary' ? theme.colors.text : '#FEFDFB' }}
+            />
           ) : null}
-          <ButtonText className={`text-base font-bold ${variantTextClassName[variant]}`}>
+          <ButtonText
+            className={`text-base font-bold ${variantTextClassName[variant]}`}
+            style={{ color: variant === 'secondary' ? theme.colors.text : '#FEFDFB' }}
+          >
             {label}
           </ButtonText>
         </>

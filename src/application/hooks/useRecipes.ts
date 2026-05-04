@@ -9,16 +9,28 @@ interface UseRecipesState {
 }
 
 export function useRecipes(search: string) {
+  return useRecipesWithFilters({ search, category: 'all' });
+}
+
+interface UseRecipesFilters {
+  readonly search: string;
+  readonly category: string;
+}
+
+export function useRecipesWithFilters(filters: UseRecipesFilters) {
   const [state, setState] = useState<UseRecipesState>({
     recipes: [],
     loading: true,
     error: null,
   });
 
-  const refresh = useCallback(async (query: string) => {
+  const refresh = useCallback(async (query: string, category: string) => {
     setState((s) => ({ ...s, loading: true, error: null }));
     try {
-      const recipes = await RecipeRepository.list(query);
+      const recipes = await RecipeRepository.list({
+        search: query,
+        category: category === 'all' ? undefined : category,
+      });
       setState({ recipes, loading: false, error: null });
     } catch (err) {
       setState({
@@ -32,13 +44,16 @@ export function useRecipes(search: string) {
   useEffect(() => {
     // Debounce search input to avoid hammering SQLite on every keystroke.
     const handle = setTimeout(() => {
-      void refresh(search);
+      void refresh(filters.search, filters.category);
     }, 150);
     return () => clearTimeout(handle);
-  }, [search, refresh]);
+  }, [filters.category, filters.search, refresh]);
 
   return {
     ...state,
-    refresh: useCallback(() => refresh(search), [refresh, search]),
+    refresh: useCallback(
+      () => refresh(filters.search, filters.category),
+      [filters.category, filters.search, refresh]
+    ),
   };
 }

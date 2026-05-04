@@ -1,14 +1,16 @@
-import React, { useLayoutEffect } from 'react';
-import { Clock3, Flame, Pencil, UtensilsCrossed } from 'lucide-react-native';
-import { View, ScrollView, Image, ActivityIndicator } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ArrowRight, Clock3, Ellipsis, Flame, UtensilsCrossed } from 'lucide-react-native';
+import { Alert, Image, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '@presentation/navigation/types';
 import { useRecipe } from '@application/hooks/useRecipe';
-import { Button, ButtonIcon, ButtonText } from '@/components/ui/button';
+import { useRecipeMutations } from '@application/hooks/useRecipeMutations';
 import { Icon } from '@/components/ui/icon';
+import { Pressable } from '@/components/ui/pressable';
 import { Text } from '@/components/ui/text';
+import { ActionDrawerOverlay } from '@presentation/components/ActionDrawerOverlay';
 import { strings } from '@shared/i18n/he';
 import { theme } from '@shared/theme/theme';
 import { UNIT_OPTIONS } from '@shared/constants/units';
@@ -27,36 +29,57 @@ export function DetailScreen(): React.ReactElement {
   const navigation = useNavigation<Nav>();
   const { id } = route.params;
   const { recipe, loading } = useRecipe(id);
+  const { remove } = useRecipeMutations();
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
 
-  useLayoutEffect(() => {
-    navigation.setOptions({
-      title: recipe?.title ?? '',
-      headerRight: () => (
-        <Button
-          onPress={() => navigation.navigate('RecipeEdit', { id })}
-          action="secondary"
-          variant="solid"
-          hitSlop={12}
-          className="border border-outline-500"
-          style={{
-            paddingHorizontal: theme.spacing.md,
-            minHeight: theme.minTouchTarget,
-            borderRadius: theme.radius.md,
-          }}
-        >
-          <ButtonText className="text-base text-primary-500 font-bold">
-            {strings.screens.detail.edit}
-          </ButtonText>
-          <ButtonIcon as={Pencil} size="sm" className="text-primary-500" />
-        </Button>
-      ),
-    });
-  }, [navigation, recipe?.title, id]);
+  const statsCards = useMemo(() => {
+    if (!recipe) return [] as const;
+    return [
+      {
+        key: 'prep',
+        icon: Clock3,
+        label: strings.screens.detail.prepTime,
+        value: `${recipe.prepTimeMinutes} ${strings.screens.detail.minutesUnit}`,
+      },
+      {
+        key: 'cook',
+        icon: Flame,
+        label: strings.screens.detail.cookTime,
+        value: `${recipe.cookTimeMinutes} ${strings.screens.detail.minutesUnit}`,
+      },
+      {
+        key: 'servings',
+        icon: UtensilsCrossed,
+        label: strings.screens.detail.servings,
+        value: `${recipe.servings} ${strings.screens.detail.servingsUnit}`,
+      },
+    ] as const;
+  }, [recipe]);
+
+  const openEdit = useCallback(() => {
+    setDrawerOpen(false);
+    navigation.navigate('RecipeEdit', { id });
+  }, [id, navigation]);
+
+  const onDelete = useCallback(() => {
+    setDrawerOpen(false);
+    Alert.alert(strings.screens.edit.confirmDelete.title, strings.screens.edit.confirmDelete.message, [
+      { text: strings.screens.edit.confirmDelete.cancel, style: 'cancel' },
+      {
+        text: strings.screens.edit.confirmDelete.confirm,
+        style: 'destructive',
+        onPress: async () => {
+          await remove(id);
+          navigation.popToTop();
+        },
+      },
+    ]);
+  }, [id, navigation, remove]);
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={theme.colors.accent} size="large" />
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.bg }}>
+        <Text style={{ color: theme.colors.text }}>טוען...</Text>
       </View>
     );
   }
@@ -70,158 +93,168 @@ export function DetailScreen(): React.ReactElement {
   }
 
   const instructionSteps = parseInstructionSteps(recipe.instructions);
-  const statsCards = [
-    {
-      key: 'prep',
-      icon: Clock3,
-      label: strings.screens.detail.prepTime,
-      value: `${recipe.prepTimeMinutes} ${strings.screens.detail.minutesUnit}`,
-    },
-    {
-      key: 'cook',
-      icon: Flame,
-      label: strings.screens.detail.cookTime,
-      value: `${recipe.cookTimeMinutes} ${strings.screens.detail.minutesUnit}`,
-    },
-    {
-      key: 'servings',
-      icon: UtensilsCrossed,
-      label: strings.screens.detail.servings,
-      value: `${recipe.servings} ${strings.screens.detail.servingsUnit}`,
-    },
-  ] as const;
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: theme.colors.bg }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.bg }}>
       <ScrollView
         style={{ backgroundColor: theme.colors.bg }}
-        contentContainerStyle={{ padding: theme.spacing.lg, gap: theme.spacing.xl }}
+        contentContainerStyle={{ paddingBottom: theme.spacing.xl + 24 }}
       >
-        {recipe.imageUri ? (
-          <Image
-            source={{ uri: recipe.imageUri }}
-            accessibilityLabel={strings.a11y.recipeImage}
-            style={{
-              width: '100%',
-              height: 220,
-              borderRadius: theme.radius.lg,
-              backgroundColor: theme.colors.surface,
-            }}
-            resizeMode="cover"
-          />
-        ) : null}
-
-        <View style={{ gap: theme.spacing.lg }} >
-          <Text className="text-xl font-bold text-typography-950">
-            {strings.screens.detail.statsHeading}
-          </Text>
+        <View style={{ height: 400, marginBottom: 24 }}>
+          {recipe.imageUri ? (
+            <Image
+              source={{ uri: recipe.imageUri }}
+              accessibilityLabel={strings.a11y.recipeImage}
+              style={{ width: '100%', height: 400 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={{ flex: 1, backgroundColor: theme.colors.surfaceAlt }} />
+          )}
           <View
             style={{
+              position: 'absolute',
+              top: 48,
+              left: 16,
+              right: 16,
               flexDirection: 'row',
-              flexWrap: 'nowrap',
-              gap: theme.spacing.md,
+              justifyContent: 'space-between',
             }}
           >
+            <Pressable
+              onPress={() => setDrawerOpen(true)}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 50,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme.colors.accent,
+              }}
+            >
+              <Icon as={Ellipsis} size="md" style={{ color: '#FEFDFB' }} />
+            </Pressable>
+            <Pressable
+              onPress={() => navigation.goBack()}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 50,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: theme.colors.menu,
+              }}
+            >
+              <Icon as={ArrowRight} size="md" style={{ color: '#FEFDFB' }} />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={{ paddingHorizontal: theme.spacing.lg, gap: theme.spacing.xl }}>
+          <View style={{ gap: 4, alignItems: 'flex-end' }}>
+            {recipe.category ? (
+              <Text style={{ color: 'rgba(99,48,19,0.60)', fontSize: 18, fontWeight: '700' }}>
+                {recipe.category}
+              </Text>
+            ) : null}
+            <Text style={{ color: theme.colors.text, fontSize: 28, fontWeight: '700' }}>
+              {recipe.title}
+            </Text>
+            {recipe.link ? (
+              <Text style={{ color: theme.colors.accent, fontSize: 14 }}>{recipe.link}</Text>
+            ) : null}
+          </View>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
             {statsCards.map((card) => (
               <View
                 key={card.key}
                 style={{
                   flex: 1,
-                  backgroundColor: theme.colors.surfaceAlt,
-                  borderRadius: theme.radius.lg,
+                  minHeight: 115,
+                  borderRadius: 8,
+                  borderColor: 'rgba(99,48,19,0.1)',
                   borderWidth: 1,
-                  borderColor: theme.colors.border,
-                  paddingHorizontal: theme.spacing.sm,
-                  paddingVertical: theme.spacing.md,
-                  gap: theme.spacing.sm,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: theme.spacing.xs }}>
-                  <Icon as={card.icon} size="sm" className="text-primary-500" />
-                  <Text className="text-sm text-typography-950">
-                    {card.label}
-                  </Text>
-                  
-                </View>
-                <Text className="text-lg font-bold text-typography-950">
-                  {card.value}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View style={{ gap: theme.spacing.md }}>
-          <Text className="text-xl font-bold text-typography-950">
-            {strings.screens.detail.ingredientsHeading}
-          </Text>
-          <View style={{ gap: theme.spacing.sm }}>
-            {recipe.ingredients.map((ing, idx) => (
-              <View
-                key={`${ing.name}-${idx}`}
-                style={{
-                  flexDirection: 'row',
+                  backgroundColor: 'rgba(224,207,191,0.25)',
+                  padding: 16,
                   justifyContent: 'space-between',
-                  paddingVertical: theme.spacing.sm,
-                  paddingHorizontal: theme.spacing.md,
-                  backgroundColor: theme.colors.surface,
-                  borderRadius: theme.radius.md,
-                  borderWidth: 1,
-                  borderColor: theme.colors.border,
+                  alignItems: 'flex-end',
                 }}
               >
-                <Text className="text-base text-typography-950 font-semibold">
-                  {ing.name}
-                </Text>
-                <Text className="text-base text-typography-500">
-                  {ing.amount} {unitLabel(ing.unit)}
-                </Text>
+                <Icon as={card.icon} size="sm" style={{ color: theme.colors.text }} />
+                <View style={{ alignSelf: 'stretch' }}>
+                  <Text style={{ color: theme.colors.text, fontSize: 12 }}>{card.label}</Text>
+                  <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '700' }}>
+                    {card.value}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
-        </View>
 
-        <View style={{ gap: theme.spacing.md }}>
-          <Text className="text-xl font-bold text-typography-950">
-            {strings.screens.detail.instructionsHeading}
-          </Text>
-          <View
-            style={{
-              backgroundColor: theme.colors.surface,
-              borderRadius: theme.radius.lg,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-              padding: theme.spacing.lg,
-            }}
-          >
-            <View style={{ gap: theme.spacing.md }}>
-              {instructionSteps.map((step, index) => (
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '700' }}>
+              {strings.screens.detail.ingredientsHeading}
+            </Text>
+            <View style={{ gap: 8 }}>
+              {recipe.ingredients.map((ing, idx) => (
                 <View
-                  key={`${step}-${index}`}
+                  key={`${ing.name}-${idx}`}
                   style={{
+                    borderRadius: 8,
+                    borderColor: 'rgba(99,48,19,0.1)',
+                    borderWidth: 1,
+                    backgroundColor: 'rgba(224,207,191,0.25)',
+                    paddingHorizontal: 24,
+                    paddingVertical: 12,
                     flexDirection: 'row',
-                    alignItems: 'flex-start',
-                    gap: theme.spacing.md,
+                    justifyContent: 'space-between',
                   }}
                 >
-                  <Text className="text-base text-primary-500 font-bold">
+                  <Text style={{ color: theme.colors.text }}>
+                    {ing.amount} {unitLabel(ing.unit)}
+                  </Text>
+                  <Text style={{ color: theme.colors.text, fontWeight: '700' }}>{ing.name}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '700' }}>
+              {strings.screens.detail.instructionsHeading}
+            </Text>
+            <View
+              style={{
+                borderRadius: 8,
+                borderColor: 'rgba(99,48,19,0.1)',
+                borderWidth: 1,
+                backgroundColor: theme.colors.surfaceAlt,
+                padding: 8,
+                gap: 8,
+              }}
+            >
+              {instructionSteps.map((step, index) => (
+                <View key={`${step}-${index}`} style={{ flexDirection: 'row', gap: 8 }}>
+                  <Text style={{ color: theme.colors.accent, fontWeight: '700' }}>
                     {formatStepNumber(index)}
                   </Text>
-                  <Text
-                    className="text-base text-typography-950"
-                    style={{
-                      flex: 1,
-                      lineHeight: 24,
-                    }}
-                  >
-                    {step}
-                  </Text>
+                  <Text style={{ color: theme.colors.text, flex: 1, lineHeight: 22 }}>{step}</Text>
                 </View>
               ))}
             </View>
           </View>
         </View>
       </ScrollView>
+      <ActionDrawerOverlay
+        isOpen={isDrawerOpen}
+        title="מה תרצו לעשות?"
+        onClose={() => setDrawerOpen(false)}
+        actions={[
+          { key: 'edit', label: 'ערוך מתכון', tone: 'default', onPress: openEdit },
+          { key: 'delete', label: 'מחק מתכון', tone: 'danger', onPress: onDelete },
+        ]}
+      />
     </SafeAreaView>
   );
 }

@@ -5,7 +5,7 @@ import { I18nManager, StatusBar, View, ActivityIndicator, DevSettings, Text, Tex
 import * as Updates from 'expo-updates';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { RootNavigator } from '@presentation/navigation/RootNavigator';
 import { theme } from '@shared/theme/theme';
 import { getDb } from '@data/db/database';
@@ -13,9 +13,9 @@ import { ensureImageDir } from '@shared/utils/images';
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 
 const navTheme = {
-  ...DarkTheme,
+  ...DefaultTheme,
   colors: {
-    ...DarkTheme.colors,
+    ...DefaultTheme.colors,
     background: theme.colors.bg,
     card: theme.colors.surface,
     text: theme.colors.text,
@@ -47,7 +47,7 @@ const applyGlobalRTLTextDefaults = (): void => {
   const inputDefaultStyle = inputDefaults.style;
   inputComponent.defaultProps = {
     ...inputDefaults,
-    textAlign: 'left',
+    textAlign: 'right',
     style: Array.isArray(inputDefaultStyle)
       ? [rtlTextStyle, ...inputDefaultStyle]
       : [rtlTextStyle, inputDefaultStyle],
@@ -114,7 +114,7 @@ export default function App(): React.ReactElement {
       >
         <ActivityIndicator color={theme.colors.accent} size="large" />
         <StatusBar
-          barStyle="light-content"
+          barStyle="dark-content"
           backgroundColor={theme.colors.bg}
         />
       </View>
@@ -122,13 +122,13 @@ export default function App(): React.ReactElement {
   }
 
   return (
-    <GluestackUIProvider mode="dark">
+    <GluestackUIProvider mode="light">
       <GestureHandlerRootView
-        style={{ flex: 1, direction: 'rtl', backgroundColor: theme.colors.bg }}
+        style={{ flex: 1, direction: 'ltr', backgroundColor: theme.colors.bg }}
       >
         <SafeAreaProvider style={{ flex: 1, backgroundColor: theme.colors.bg }}>
           <StatusBar
-            barStyle="light-content"
+            barStyle="dark-content"
             backgroundColor={theme.colors.bg}
           />
           <NavigationContainer theme={navTheme} direction="rtl">

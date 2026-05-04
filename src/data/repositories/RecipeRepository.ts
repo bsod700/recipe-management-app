@@ -6,6 +6,8 @@ import { deleteImage } from '@shared/utils/images';
 interface RecipeRow {
   id: string;
   title: string;
+  category: string | null;
+  link: string | null;
   prep_time_minutes: number;
   cook_time_minutes: number;
   servings: number;
@@ -21,6 +23,8 @@ function rowToRecipe(row: RecipeRow): Recipe {
   const recipe: Recipe = {
     id: row.id,
     title: row.title,
+    ...(row.category ? { category: row.category } : {}),
+    ...(row.link ? { link: row.link } : {}),
     prepTimeMinutes: row.prep_time_minutes ?? 0,
     cookTimeMinutes: row.cook_time_minutes ?? 0,
     servings: row.servings ?? 0,
@@ -34,17 +38,42 @@ function rowToRecipe(row: RecipeRow): Recipe {
 }
 
 export const RecipeRepository = {
-  async list(search?: string): Promise<Recipe[]> {
+  async list(options?: { search?: string; category?: string }): Promise<Recipe[]> {
     const db = await getDb();
-    const rows = search && search.trim().length > 0
-      ? await db.getAllAsync<RecipeRow>(
-          `SELECT * FROM recipes WHERE title LIKE ? ORDER BY updated_at DESC`,
-          [`%${search.trim()}%`]
-        )
-      : await db.getAllAsync<RecipeRow>(
-          `SELECT * FROM recipes ORDER BY updated_at DESC`
-        );
+    const search = options?.search?.trim() ?? '';
+    const category = options?.category?.trim() ?? '';
+    const where: string[] = [];
+    const params: Array<string> = [];
+
+    if (search.length > 0) {
+      where.push('(title LIKE ? OR IFNULL(category, \'\') LIKE ?)');
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    if (category.length > 0) {
+      where.push('category = ?');
+      params.push(category);
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = await db.getAllAsync<RecipeRow>(
+      `SELECT * FROM recipes ${whereClause} ORDER BY updated_at DESC`,
+      params
+    );
     return rows.map(rowToRecipe);
+  },
+
+  async listCategories(): Promise<string[]> {
+    const db = await getDb();
+    const rows = await db.getAllAsync<{ category: string }>(
+      `SELECT DISTINCT TRIM(category) AS category
+       FROM recipes
+       WHERE category IS NOT NULL AND TRIM(category) <> ''
+       ORDER BY category COLLATE NOCASE ASC`
+    );
+
+    return rows
+      .map((row) => row.category.trim())
+      .filter((category) => category.length > 0);
   },
 
   async getById(id: string): Promise<Recipe | null> {
@@ -62,6 +91,8 @@ export const RecipeRepository = {
     const recipe: Recipe = {
       id: newId(),
       title: draft.title,
+      ...(draft.category ? { category: draft.category.trim() } : {}),
+      ...(draft.link ? { link: draft.link.trim() } : {}),
       prepTimeMinutes: draft.prepTimeMinutes,
       cookTimeMinutes: draft.cookTimeMinutes,
       servings: draft.servings,
@@ -73,12 +104,14 @@ export const RecipeRepository = {
     };
     await db.runAsync(
       `INSERT INTO recipes (
-         id, title, prep_time_minutes, cook_time_minutes, servings, ingredients, instructions, image_uri, created_at, updated_at
+         id, title, category, link, prep_time_minutes, cook_time_minutes, servings, ingredients, instructions, image_uri, created_at, updated_at
        )
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         recipe.id,
         recipe.title,
+        recipe.category ?? null,
+        recipe.link ?? null,
         recipe.prepTimeMinutes,
         recipe.cookTimeMinutes,
         recipe.servings,
@@ -106,6 +139,8 @@ export const RecipeRepository = {
     const updated: Recipe = {
       id,
       title: draft.title,
+      ...(draft.category ? { category: draft.category.trim() } : {}),
+      ...(draft.link ? { link: draft.link.trim() } : {}),
       prepTimeMinutes: draft.prepTimeMinutes,
       cookTimeMinutes: draft.cookTimeMinutes,
       servings: draft.servings,
@@ -117,10 +152,12 @@ export const RecipeRepository = {
     };
     await db.runAsync(
       `UPDATE recipes
-       SET title = ?, prep_time_minutes = ?, cook_time_minutes = ?, servings = ?, ingredients = ?, instructions = ?, image_uri = ?, updated_at = ?
+       SET title = ?, category = ?, link = ?, prep_time_minutes = ?, cook_time_minutes = ?, servings = ?, ingredients = ?, instructions = ?, image_uri = ?, updated_at = ?
        WHERE id = ?`,
       [
         updated.title,
+        updated.category ?? null,
+        updated.link ?? null,
         updated.prepTimeMinutes,
         updated.cookTimeMinutes,
         updated.servings,
