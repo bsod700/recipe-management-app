@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, Plus, Sparkles } from 'lucide-react-native';
+import { ArrowRight, Plus, Sparkles } from 'lucide-react-native';
 import { BackHandler, KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Controller, useFieldArray, useForm } from 'react-hook-form';
@@ -15,6 +15,8 @@ import { TextField } from '@presentation/components/TextField';
 import { Button } from '@presentation/components/Button';
 import { PhotoPicker } from '@presentation/components/PhotoPicker';
 import { UnitPicker } from '@presentation/components/UnitPicker';
+import { TimeInput } from '@presentation/components/TimeInput';
+import { CategoryPicker } from '@presentation/components/CategoryPicker';
 import { ExitConfirmAlertOverlay } from '@presentation/components/ExitConfirmAlertOverlay';
 import { Pressable } from '@/components/ui/pressable';
 import { Icon } from '@/components/ui/icon';
@@ -43,7 +45,6 @@ export function EditScreen(): React.ReactElement {
   const { create, update, saving } = useRecipeMutations();
   const { categories } = useCategories();
   const [isDiscardOverlayOpen, setDiscardOverlayOpen] = useState(false);
-  const [draftCategory, setDraftCategory] = useState('');
 
   const defaultValues = useMemo<RecipeFormValues>(
     () => ({
@@ -60,13 +61,12 @@ export function EditScreen(): React.ReactElement {
     []
   );
 
-  const methods = useForm<RecipeFormValues>({
+  const { control, handleSubmit, reset, formState, watch, setValue } = useForm<RecipeFormValues>({
     resolver: zodResolver(recipeFormSchema),
     defaultValues,
     mode: 'onBlur',
   });
 
-  const { control, handleSubmit, reset, formState, watch, setValue } = methods;
   const ingredientFields = useFieldArray({ control, name: 'ingredients' });
   const instructionFields = useFieldArray({ control, name: 'instructions' });
 
@@ -148,12 +148,20 @@ export function EditScreen(): React.ReactElement {
       >
         <ScrollView
           style={{ backgroundColor: theme.colors.bg }}
-          contentContainerStyle={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 160, gap: 24 }}
+          contentContainerStyle={{ paddingTop: 48, paddingHorizontal: 16, paddingBottom: 144, gap: 24 }}
           keyboardShouldPersistTaps="handled"
         >
+          {/* Header */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <Pressable
-              style={{ width: 48, height: 48, borderRadius: 50, backgroundColor: theme.colors.accent, alignItems: 'center', justifyContent: 'center' }}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 50,
+                backgroundColor: theme.colors.accent,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
               <Icon as={Sparkles} size="md" style={{ color: '#FEFDFB' }} />
             </Pressable>
@@ -162,18 +170,26 @@ export function EditScreen(): React.ReactElement {
             </Text>
             <Pressable
               onPress={goBack}
-              style={{ width: 48, height: 48, borderRadius: 50, backgroundColor: theme.colors.menu, alignItems: 'center', justifyContent: 'center' }}
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 50,
+                backgroundColor: theme.colors.menu,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <Icon as={ArrowLeft} size="md" style={{ color: '#FEFDFB' }} />
+              <Icon as={ArrowRight} size="md" style={{ color: '#FEFDFB' }} />
             </Pressable>
           </View>
 
+          {/* Recipe title */}
           <Controller
             control={control}
             name="title"
             render={({ field, fieldState }) => (
               <TextField
-                label="איך נקרא למנה?"
+                label={strings.screens.edit.fields.title}
                 placeholder="שם המתכון"
                 value={field.value ?? ''}
                 onChangeText={field.onChange}
@@ -183,48 +199,55 @@ export function EditScreen(): React.ReactElement {
             )}
           />
 
+          {/* Photo */}
+          <PhotoPicker
+            uri={typeof imageUri === 'string' ? imageUri : undefined}
+            onChange={(uri) => setValue('imageUri', uri, { shouldDirty: true })}
+          />
+
+          {/* Prep time */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>זמן הכנה</Text>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>
+              {strings.screens.edit.fields.prepTime}
+            </Text>
             <Controller
               control={control}
               name="prepTimeMinutes"
               render={({ field, fieldState }) => (
-                <TextField
-                  placeholder="00"
-                  value={Number.isNaN(field.value) ? '' : String(field.value)}
-                  onChangeText={(text) => field.onChange(parseWholeNumber(text))}
-                  onBlur={field.onBlur}
-                  keyboardType="number-pad"
+                <TimeInput
+                  value={field.value}
+                  onChange={field.onChange}
                   error={fieldState.error?.message}
                 />
               )}
             />
           </View>
 
+          {/* Cook time */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>זמן אפיה / בישול</Text>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>
+              {strings.screens.edit.fields.cookTime}
+            </Text>
             <Controller
               control={control}
               name="cookTimeMinutes"
               render={({ field, fieldState }) => (
-                <TextField
-                  placeholder="00"
-                  value={Number.isNaN(field.value) ? '' : String(field.value)}
-                  onChangeText={(text) => field.onChange(parseWholeNumber(text))}
-                  onBlur={field.onBlur}
-                  keyboardType="number-pad"
+                <TimeInput
+                  value={field.value}
+                  onChange={field.onChange}
                   error={fieldState.error?.message}
                 />
               )}
             />
           </View>
 
+          {/* Servings */}
           <Controller
             control={control}
             name="servings"
             render={({ field, fieldState }) => (
               <TextField
-                label="מספר מנות"
+                label={strings.screens.edit.fields.servings}
                 placeholder="00"
                 value={Number.isNaN(field.value) ? '' : String(field.value)}
                 onChangeText={(text) => field.onChange(parseWholeNumber(text))}
@@ -235,10 +258,21 @@ export function EditScreen(): React.ReactElement {
             )}
           />
 
+          {/* Ingredients */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>מרכיבים</Text>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>
+              {strings.screens.edit.fields.ingredients}
+            </Text>
             {ingredientFields.fields.map((item, index) => (
-              <View key={item.id} style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 16, padding: 8, gap: 8 }}>
+              <View
+                key={item.id}
+                style={{
+                  backgroundColor: theme.colors.surfaceAlt,
+                  borderRadius: 16,
+                  padding: 8,
+                  gap: 8,
+                }}
+              >
                 <Controller
                   control={control}
                   name={`ingredients.${index}.name`}
@@ -256,6 +290,15 @@ export function EditScreen(): React.ReactElement {
                   <View style={{ flex: 1 }}>
                     <Controller
                       control={control}
+                      name={`ingredients.${index}.unit`}
+                      render={({ field }) => (
+                        <UnitPicker value={field.value ?? DEFAULT_UNIT} onChange={field.onChange} />
+                      )}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Controller
+                      control={control}
                       name={`ingredients.${index}.amount`}
                       render={({ field, fieldState }) => (
                         <TextField
@@ -269,26 +312,35 @@ export function EditScreen(): React.ReactElement {
                       )}
                     />
                   </View>
-                  <View style={{ flex: 1, justifyContent: 'center' }}>
-                    <Controller
-                      control={control}
-                      name={`ingredients.${index}.unit`}
-                      render={({ field }) => (
-                        <UnitPicker value={field.value ?? DEFAULT_UNIT} onChange={field.onChange} />
-                      )}
-                    />
-                  </View>
                 </View>
               </View>
             ))}
-            <Button label="הוסיפו מרכיב" variant="secondary" icon={Plus} onPress={() => ingredientFields.append({ ...emptyIngredient })} />
+            <Button
+              label="הוסיפו מרכיב"
+              variant="menu"
+              icon={Plus}
+              onPress={() => ingredientFields.append({ ...emptyIngredient })}
+            />
           </View>
 
+          {/* Instructions */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>הוראות הכנה</Text>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>
+              {strings.screens.edit.fields.instructions}
+            </Text>
             {instructionFields.fields.map((item, index) => (
-              <View key={item.id} style={{ backgroundColor: theme.colors.surfaceAlt, borderRadius: 16, padding: 8, gap: 8 }}>
-                <Text style={{ color: theme.colors.accent, fontWeight: '700' }}>{formatStepNumber(index)}</Text>
+              <View
+                key={item.id}
+                style={{
+                  backgroundColor: theme.colors.surfaceAlt,
+                  borderRadius: 16,
+                  padding: 8,
+                  gap: 8,
+                }}
+              >
+                <Text style={{ color: theme.colors.accent, fontWeight: '700', textAlign: 'right' }}>
+                  {formatStepNumber(index)}
+                </Text>
                 <Controller
                   control={control}
                   name={`instructions.${index}.text`}
@@ -299,60 +351,38 @@ export function EditScreen(): React.ReactElement {
                       onChangeText={field.onChange}
                       onBlur={field.onBlur}
                       error={fieldState.error?.message}
-                      multiline
-                      minHeight={96}
                     />
                   )}
                 />
               </View>
             ))}
-            <Button label="הוסיפו שלב" variant="secondary" icon={Plus} onPress={() => instructionFields.append({ text: '' })} />
-          </View>
-
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>קטגוריה (אופציונלי)</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {categories.map((category) => {
-                const active = categoryValue === category;
-                return (
-                  <Pressable
-                    key={category}
-                    onPress={() => setValue('category', category, { shouldDirty: true })}
-                    style={{
-                      borderRadius: 32,
-                      paddingHorizontal: 16,
-                      paddingVertical: 8,
-                      backgroundColor: active ? theme.colors.accent : theme.colors.chip,
-                    }}
-                  >
-                    <Text style={{ color: active ? '#FEFDFB' : theme.colors.text }}>{category}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            <TextField
-              placeholder="הוסיפו קטגוריה חדשה"
-              value={draftCategory}
-              onChangeText={setDraftCategory}
-            />
             <Button
-              label="הוסף קטגוריה חדשה"
-              variant="secondary"
-              onPress={() => {
-                const nextCategory = draftCategory.trim();
-                if (!nextCategory) return;
-                setValue('category', nextCategory, { shouldDirty: true });
-                setDraftCategory('');
-              }}
+              label="הוסיפו שלב"
+              variant="menu"
+              icon={Plus}
+              onPress={() => instructionFields.append({ text: '' })}
             />
           </View>
 
+          {/* Category */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: '600' }}>
+              {strings.screens.edit.fields.category}
+            </Text>
+            <CategoryPicker
+              value={categoryValue ?? ''}
+              categories={categories}
+              onChange={(cat) => setValue('category', cat, { shouldDirty: true })}
+            />
+          </View>
+
+          {/* Link */}
           <Controller
             control={control}
             name="link"
             render={({ field, fieldState }) => (
               <TextField
-                label="לינק למתכון (אופציונלי)"
+                label={strings.screens.edit.fields.link}
                 placeholder="https://www..."
                 value={field.value ?? ''}
                 onChangeText={field.onChange}
@@ -363,23 +393,20 @@ export function EditScreen(): React.ReactElement {
               />
             )}
           />
-
-          <PhotoPicker uri={typeof imageUri === 'string' ? imageUri : undefined} onChange={(uri) => setValue('imageUri', uri, { shouldDirty: true })} />
         </ScrollView>
 
+        {/* Sticky save bar */}
         <View
           style={{
             position: 'absolute',
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: theme.colors.surface,
-            borderTopWidth: 1,
-            borderTopColor: 'rgba(99,48,19,0.05)',
+            backgroundColor: theme.colors.accent,
             padding: 16,
           }}
         >
-          <Button label="שמרו מתכון" onPress={handleSubmit(onSave)} loading={saving} />
+          <Button label={strings.screens.edit.actions.save} onPress={handleSubmit(onSave)} loading={saving} />
         </View>
       </KeyboardAvoidingView>
 

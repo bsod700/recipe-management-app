@@ -8,7 +8,7 @@ import {
   ButtonText,
 } from '@/components/ui/button';
 
-type Variant = 'primary' | 'secondary' | 'danger';
+type Variant = 'primary' | 'secondary' | 'danger' | 'menu';
 
 interface Props {
   readonly label: string;
@@ -25,18 +25,21 @@ const variantAction: Record<Variant, 'primary' | 'secondary' | 'negative'> = {
   primary: 'primary',
   secondary: 'secondary',
   danger: 'negative',
+  menu: 'primary',
 };
 
 const variantClassName: Record<Variant, string> = {
   primary: '',
   secondary: '',
   danger: '',
+  menu: '',
 };
 
 const variantTextClassName: Record<Variant, string> = {
   primary: '',
   secondary: '',
   danger: '',
+  menu: '',
 };
 
 export const Button = memo(function Button({
@@ -68,7 +71,9 @@ export const Button = memo(function Button({
             ? theme.colors.accent
             : variant === 'danger'
               ? theme.colors.danger
-              : theme.colors.surfaceAlt,
+              : variant === 'menu'
+                ? theme.colors.menu
+                : theme.colors.surfaceAlt,
         borderWidth: 1,
         borderColor: 'rgba(99,48,19,0.1)',
       }}
